@@ -1,12 +1,12 @@
 // @vitest-environment jsdom
-/** Section, setup-card, and hand-written editor behavior over a scripted wire face. */
+/** Section, row-editor, and hand-written editor behavior over a scripted wire face. */
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Schema from '@deepseek-ai/schemastery'
 import { bindSnapshotSelector } from '@deepseek-ai/dsh-client-test-runtime'
 import type { RpcResponse, SettingsNamespaceView } from '@deepseek-ai/dsh-api-remotes/client'
 import {
-  ModelsSection, needsSetup, providerCopy, providerTargetLabel, removeProviderProfile,
+  ModelsSection, providerCopy, providerTargetLabel, removeProviderProfile,
 } from '../src/client/ModelsSection.tsx'
 import type { ModelsSectionInjected, ModelsSectionProps } from '../src/client/ModelsSection.tsx'
 import { pathOps } from '../src/client/ProviderEditor.tsx'
@@ -16,7 +16,6 @@ import {
 import { apiKeyFailure } from '../src/client/apiKey.ts'
 import { SettingsDescribeMirror } from '@deepseek-ai/dsh-client-ui-settings/src/client/settings-mirror.ts'
 import { deriveKeyRef, ModelsSettingsStore } from '../src/client/store.ts'
-import type { ProviderRow } from '../src/client/store.ts'
 import { en } from '../src/client/locales.ts'
 import { settingsSchema } from './settings-schema.client.ts'
 
@@ -207,7 +206,8 @@ async function mountSection(overrides: Parameters<typeof scriptedFace>[0] = {}) 
 
 /**
  * Mount for a user who cannot reach any provider yet: no credential is stored
- * anywhere, so the whole-section DeepSeek route owns the first-run setup card.
+ * anywhere. Every row, DeepSeek included, still starts collapsed — this
+ * posture is what the first-run onboarding dialog reads, not this page.
  */
 async function mountFirstRun(overrides: Parameters<typeof scriptedFace>[0] = {}) {
   const scripted = scriptedFace(overrides)
@@ -236,16 +236,17 @@ describe('ModelsSection', () => {
     expect(document.body.textContent).toBe('')
   })
 
-  it('renders the unkeyed whole-section provider as an open setup card in the first-run posture', async () => {
+  it('does not auto-open any row, even DeepSeek, in the first-run posture', async () => {
     await mountFirstRun()
-    // Nothing is reachable yet, and DeepSeek has no configured credential and
-    // no stored apiKey → setup card.
+    // Nothing is reachable yet, but nothing on the page opens itself either —
+    // the onboarding dialog is what nudges a first-run user, not this page.
     expect(screen.getByText('DeepSeek')).toBeTruthy()
-    expect(screen.getByLabelText(en.keyInput)).toBeTruthy()
     expect(screen.getByText('openai')).toBeTruthy()
-    expect(screen.queryByText('Active')).toBeNull()
-    expect(screen.queryByText('Inactive')).toBeNull()
+    expect(screen.queryByLabelText(en.keyInput)).toBeNull()
     expect(screen.getByText(en.add)).toBeTruthy()
+    // DeepSeek's card is still one click away, like every other row.
+    fireEvent.click(screen.getByRole('button', { name: deepSeekCopy(en.editProvider) }))
+    expect(screen.getByLabelText(en.keyInput)).toBeTruthy()
   })
 
   it('leaves the unkeyed provider a plain row once another provider is usable', async () => {
@@ -279,50 +280,19 @@ describe('ModelsSection', () => {
       t={t}
     />)
 
-    const missing = screen.getByRole('img', { name: en.credentialMissing })
-    expect(missing.getAttribute('title')).toBe(en.credentialMissing)
-    expect(missing.className).toContain('credentialDotMissing')
-    expect(missing.closest('li')?.textContent).toContain('openai')
+    // Every row with a named reference and no confirmed credential gets the
+    // dot — DeepSeek's whole-section route included, now that it renders as
+    // an ordinary row here too.
+    const missing = screen.getAllByRole('img', { name: en.credentialMissing })
+    expect(missing).toHaveLength(2)
+    for (const dot of missing) {
+      expect(dot.getAttribute('title')).toBe(en.credentialMissing)
+      expect(dot.className).toContain('credentialDotMissing')
+    }
+    expect(missing.some(dot => dot.closest('li')?.textContent?.includes('openai') === true)).toBe(true)
+    expect(missing.some(dot => dot.closest('li')?.textContent?.includes('DeepSeek') === true)).toBe(true)
     expect(screen.queryByRole('img', { name: en.credentialConfigured })).toBeNull()
     expect(screen.getByText('zombie').closest('li')?.querySelector('[role="img"]')).toBeNull()
-  })
-
-  it('turns the setup card into a row once the credential reports configured', async () => {
-    const { face } = await mountFirstRun()
-    face.credentials.describe.mockImplementation((payload: { refs: string[] }) => Promise.resolve(ok({
-      credentials: Object.fromEntries(payload.refs.map(ref => [ref, { configured: true, writable: true }])),
-    })))
-    const controller = new ModelsSettingsStore(face as unknown as WireFace, settingsSchema, new SettingsDescribeMirror(face as never))
-    await controller.load()
-    cleanup()
-    render(<ModelsSection
-      controller={controller}
-      useSnapshot={bindSnapshotSelector(controller.store)}
-      api={face as never}
-      schema={settingsSchema}
-      t={t}
-    />)
-    // Now a row with an Edit button, not an open card.
-    expect(screen.getAllByText(en.edit).length).toBeGreaterThan(1)
-    expect(screen.queryByLabelText(en.keyInput)).toBeNull()
-  })
-
-  it('decides setup need from the joined credential state and the first-run posture', () => {
-    const entry = { provider: 'p', displayName: 'p', settingsNs: 'llm-deepseek', settingsPath: [], active: true }
-    const row = (credential: ProviderRow['credential']): ProviderRow => ({
-      entry,
-      configured: true,
-      removable: false,
-      apiKeyEnv: 'X',
-      credential,
-    })
-    expect(needsSetup(row(undefined), false)).toBe(true)
-    expect(needsSetup(row({ configured: true, writable: true }), false)).toBe(false)
-    const nested = { ...row(undefined), entry: { ...entry, settingsPath: ['providers', 'x'] } }
-    expect(needsSetup(nested, false)).toBe(false)
-    // A user who can already reach some provider is not in the first-run
-    // posture, so nothing on the page opens itself.
-    expect(needsSetup(row(undefined), true)).toBe(false)
   })
 
   it('derives conventional credential references from route ids', () => {
@@ -346,8 +316,9 @@ describe('ModelsSection', () => {
     expect(pathOps([], { a: 1 }, { a: 1 })).toEqual([])
   })
 
-  it('stores a typed key write-only from the setup card without touching settings', async () => {
+  it('stores a typed key write-only from the row editor without touching settings', async () => {
     const { set, update, face } = await mountFirstRun()
+    fireEvent.click(screen.getByRole('button', { name: deepSeekCopy(en.editProvider) }))
     const key = screen.getByLabelText<HTMLInputElement>(en.keyInput)
     fireEvent.change(key, { target: { value: '  sk-live  ' } })
     fireEvent.click(screen.getByText(en.apply))
@@ -1032,6 +1003,7 @@ describe('ModelsSection', () => {
         schema={settingsSchema}
         t={t}
       />)
+      fireEvent.click(await screen.findByRole('button', { name: deepSeekCopy(en.editProvider) }))
       const key = await screen.findByLabelText<HTMLInputElement>(en.keyInput)
       expect(key.placeholder).toBe(en.keyPlaceholder)
       await new Promise(resolve => setTimeout(resolve, 10))
@@ -1071,6 +1043,7 @@ describe('ModelsSection', () => {
     await mountFirstRun({
       set: vi.fn(() => Promise.resolve(fail('credentials: DEEPSEEK_API_KEY is shadowed by the read-only environment', 'credential-rejected'))),
     })
+    fireEvent.click(screen.getByRole('button', { name: deepSeekCopy(en.editProvider) }))
     const key = screen.getByLabelText<HTMLInputElement>(en.keyInput)
     fireEvent.change(key, { target: { value: 'sk-live' } })
     fireEvent.click(screen.getByText(en.apply))
@@ -1221,24 +1194,18 @@ describe('ModelsSection', () => {
     expect(screen.queryByLabelText(en.provider)).toBeNull()
   })
 
-  it('collapses the setup card on cancel without disturbing another open card', async () => {
-    // The regression: the setup card shared the row/add/declare close handler,
-    // so cancelling it discarded the add card's draft while staying open itself.
+  it('opening Add closes an already-open row editor, one editor at a time', async () => {
     await mountFirstRun()
+    fireEvent.click(screen.getByRole('button', { name: deepSeekCopy(en.editProvider) }))
     expect(screen.getAllByLabelText(en.keyInput)).toHaveLength(1)
     fireEvent.click(screen.getByText(en.add))
     await screen.findByLabelText(en.provider)
-    expect(screen.getAllByLabelText(en.keyInput)).toHaveLength(2)
-
-    // The setup card is the first one on the page, above the add block.
-    fireEvent.click(screen.getAllByText(en.cancel)[0] as HTMLElement)
-    // The add card kept its draft…
-    expect(screen.getByLabelText(en.provider)).toBeTruthy()
-    // …and DeepSeek collapsed to an ordinary row carrying the missing-key dot.
+    // DeepSeek's editor and the add card share one editing slot: opening Add
+    // took it over, closing DeepSeek's rather than opening a second editor.
     expect(screen.getAllByLabelText(en.keyInput)).toHaveLength(1)
     expect(screen.getAllByRole('img', { name: en.credentialMissing })
       .some(dot => dot.closest('li')?.textContent?.includes('DeepSeek') === true)).toBe(true)
-    // Its card reopens through Edit, which closes the add card as any row does.
+    // DeepSeek's card reopens through Edit, which closes the add card in turn.
     fireEvent.click(screen.getByRole('button', { name: deepSeekCopy(en.editProvider) }))
     expect(screen.getAllByLabelText(en.keyInput)).toHaveLength(1)
     expect(screen.queryByLabelText(en.provider)).toBeNull()
