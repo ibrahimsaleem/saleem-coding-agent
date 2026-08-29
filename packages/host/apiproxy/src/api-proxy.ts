@@ -4,9 +4,9 @@
  */
 
 import { randomUUID } from 'node:crypto'
-import { mkdir, stat } from 'node:fs/promises'
+import { mkdir, readdir, stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
-import { dirname } from 'node:path'
+import { dirname, join, posix, win32 } from 'node:path'
 import { z as zod } from 'zod'
 import type { Context } from '@deepseek-ai/cordis'
 import { installModelSelection } from '@deepseek-ai/dsh-agent'
@@ -41,7 +41,7 @@ import type {
   ModelCatalogFailure, ModelProviderGroup,
   ModelReasoning, MuxFrame, PromptContentPart, QuestionResponsePayload, SessionListMetadata, SessionProjectionsBlock, SessionSearchItem,
   QueuedInboxItem, SessionSummary, SettingsNamespaceView, SubagentAddress, JobView, ToolEventView,
-  WorkspaceId, WorkspaceView,
+  WorkspaceEntry, WorkspaceId, WorkspaceView,
 } from './api/index.ts'
 import {
   DEFAULT_SESSION_LOG_COMPRESSION_LEVEL,
@@ -571,6 +571,55 @@ function directoryError(error: unknown): RpcError {
     return { code: error.code, message: error.message, details: { path: error.path } }
   }
   return { code: 'internal', message: error instanceof Error ? error.message : String(error), details: {} }
+}
+
+/**
+ * True when `path` names one fixed filesystem location regardless of process
+ * state: POSIX-absolute on POSIX; on Windows only drive-qualified (`C:\…`) or
+ * complete UNC (`\\server\share…`) forms. Rooted drive-less forms (`\foo`,
+ * `/foo`) and incomplete UNC prefixes pass Node's own `isAbsolute` yet still
+ * resolve against the process's current drive — the same fence
+ * `directory-picker-browse`'s `fullyQualified` applies, duplicated here in
+ * miniature rather than imported: this handler talks to the filesystem
+ * directly (no pluggable backend), so it does not otherwise depend on one
+ * concrete `directoryPicker` provider package.
+ */
+function fullyQualifiedHostPath(path: string, platform: NodeJS.Platform = process.platform): boolean {
+  return platform === 'win32'
+    ? win32.isAbsolute(path) && /^(?:[A-Za-z]:[\\/]|[\\/]{2}[^\\/]+[\\/]+[^\\/]+)/.test(path)
+    : posix.isAbsolute(path)
+}
+
+/** Complete-result bound of one host.listWorkspaceEntries level (directories and files combined). */
+const MAX_WORKSPACE_ENTRIES = 1000
+
+/**
+ * List one directory's immediate files and subdirectories for the workspace
+ * tree panel. Symlinks are reported as whichever kind their own dirent
+ * carries (not followed/probed) — a simpler rule than the directory picker's
+ * enterability probe, acceptable here because a broken or file-targeting
+ * symlink still renders as a legible (if inert) row rather than being hidden.
+ * @param path - fully qualified directory to list.
+ * @returns entries (directories first, each group name-sorted) and whether the level was cut.
+ */
+async function readWorkspaceLevel(path: string): Promise<{ entries: WorkspaceEntry[]; truncated: boolean }> {
+  const dirents = await readdir(path, { withFileTypes: true })
+  const directories = dirents.filter(dirent => dirent.isDirectory())
+    .map(dirent => dirent.name).sort((a, b) => a.localeCompare(b))
+  const files = dirents.filter(dirent => !dirent.isDirectory())
+    .map(dirent => dirent.name).sort((a, b) => a.localeCompare(b))
+  const ordered = [
+    ...directories.map(name => ({ name, kind: 'directory' as const })),
+    ...files.map(name => ({ name, kind: 'file' as const })),
+  ]
+  const truncated = ordered.length > MAX_WORKSPACE_ENTRIES
+  const entries: WorkspaceEntry[] = ordered.slice(0, MAX_WORKSPACE_ENTRIES).map(row => ({
+    name: row.name,
+    path: join(path, row.name),
+    kind: row.kind,
+    hidden: row.name.startsWith('.'),
+  }))
+  return { entries, truncated }
 }
 
 /** Resolved Agent model and project-directory defaults consumed by the API implementation. */
@@ -2887,6 +2936,36 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             return err(request, { code: 'cancelled', message: 'directory listing was aborted', details: {} })
           }
           return err(request, directoryError(error))
+        }
+      },
+
+      async listWorkspaceEntries(request, signal) {
+        const { path } = request.payload
+        // A single readdir call cannot be raced mid-flight (no stream to stop
+        // between entries, unlike listDirectory's opendir scan), so the only
+        // abort this handler can honor is one that already landed before the
+        // call starts.
+        if (signal.aborted) {
+          return err(request, { code: 'cancelled', message: 'workspace listing was aborted', details: {} })
+        }
+        if (!fullyQualifiedHostPath(path)) {
+          return err(request, {
+            code: 'directory-unreadable',
+            message: `cannot list "${path}": not a fully qualified path`,
+            details: { path },
+          })
+        }
+        try {
+          return ok(request, { path, ...await readWorkspaceLevel(path) })
+        } catch (error: unknown) {
+          // readdir has no signal to race, so a rejection here is always a
+          // real filesystem failure, never the caller's own abort (handled
+          // above, before the call).
+          return err(request, {
+            code: 'directory-unreadable',
+            message: `cannot list ${path}: ${error instanceof Error ? error.message : String(error)}`,
+            details: { path },
+          })
         }
       },
 

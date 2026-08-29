@@ -669,6 +669,21 @@ export const IconFolderClose16 = ({ size = 16, className }: IconProps) => (
   </svg>
 )
 
+/**
+ * file_16, outline: a generic document with a folded top-right corner, for a
+ * file-tree row. One glyph for every file — no per-file-type variants.
+ */
+export const IconFileOutline16 = ({ size = 16, className }: IconProps) => (
+  <svg width={size} height={size} className={className} viewBox="0 0 16 16" fill="none">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M3.5 1.5C2.94772 1.5 2.5 1.94772 2.5 2.5V13.5C2.5 14.0523 2.94772 14.5 3.5 14.5H12.5C13.0523 14.5 13.5 14.0523 13.5 13.5V6.20711C13.5 5.94189 13.3946 5.68753 13.2071 5.5L9.5 1.79289C9.31247 1.60536 9.05811 1.5 8.79289 1.5H3.5ZM3.8 2.8H8.5V5.5C8.5 6.05228 8.94772 6.5 9.5 6.5H12.2V13.2H3.8V2.8ZM11.6716 5.2L9.8 3.32843V5.2H11.6716Z"
+      fill="currentColor"
+    />
+  </svg>
+)
+
 /** tree_corner_8x10 (figma extract; session-tree "L" connector, stroke geometry pre-expanded) */
 export const IconTreeCorner8x10 = ({ size = 10, className }: IconProps) => (
   <svg width={(size * 8) / 10} height={size} className={className} viewBox="-0.5 0 8.5 10.5" fill="none">

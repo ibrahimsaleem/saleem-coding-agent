@@ -82,15 +82,56 @@ describe('onboardingReadiness', () => {
   })
 
   it('reports a missing writable effective credential', () => {
-    expect(onboardingReadiness(state())).toEqual({ kind: 'credential-missing' })
+    expect(onboardingReadiness(state())).toEqual({ kind: 'credential-missing', rows: [row()] })
   })
 
   it('ends onboarding once any other registered provider can serve requests', () => {
     expect(onboardingReadiness(state({ rows: [row(), otherRow()] }))).toEqual({ kind: 'provider-ready' })
-    // A provider the user cannot reach yet leaves the prompt in place.
+    // A provider the user cannot reach yet leaves the prompt in place, and
+    // joins the row still needing a key as a second offerable candidate.
     expect(onboardingReadiness(state({
       rows: [row(), otherRow({ credential: missingCredential })],
-    }))).toEqual({ kind: 'credential-missing' })
+    }))).toEqual({
+      kind: 'credential-missing',
+      rows: [row(), otherRow({ credential: missingCredential })],
+    })
+  })
+
+  it('excludes only a row confirmed credential-locked, keeping the rest offerable', () => {
+    // The default row is locked; hfai still needs a key but can take one.
+    expect(onboardingReadiness(state({
+      rows: [row({ credential: { configured: false, writable: false } }), otherRow({ credential: missingCredential })],
+    }))).toEqual({
+      kind: 'credential-missing',
+      rows: [otherRow({ credential: missingCredential })],
+    })
+    // A route that has never had a key saved names no reference for the store
+    // to describe, so its credential reads as undefined — routine, not a
+    // reason to withhold it: the row stays offerable alongside its sibling.
+    expect(onboardingReadiness(state({
+      rows: [row({ credential: undefined }), otherRow({ credential: missingCredential })],
+    }))).toEqual({
+      kind: 'credential-missing',
+      rows: [row({ credential: undefined }), otherRow({ credential: missingCredential })],
+    })
+    // Inactive is not a reason to withhold a row either: for the pi-ai family
+    // it is the ordinary state of a catalog route (openai, anthropic, gemini,
+    // …) before its first save, which is exactly the row onboarding exists to
+    // offer — so it is included right alongside an already-live sibling.
+    expect(onboardingReadiness(state({
+      rows: [row(), otherRow({ entry: { ...otherRow().entry, active: false }, credential: undefined })],
+    }))).toEqual({
+      kind: 'credential-missing',
+      rows: [row(), otherRow({ entry: { ...otherRow().entry, active: false }, credential: undefined })],
+    })
+    // Every candidate excluded (locked here) with none surviving: the step
+    // reports unavailable instead of a prompt with nothing to offer.
+    expect(onboardingReadiness(state({
+      rows: [
+        row({ credential: { configured: false, writable: false } }),
+        otherRow({ credential: { configured: false, writable: false } }),
+      ],
+    }))).toEqual({ kind: 'unavailable', reason: 'no-provider-available' })
   })
 
   it('accepts file and process-environment credentials without prompting', () => {
@@ -107,21 +148,18 @@ describe('onboardingReadiness', () => {
       kind: 'unavailable',
       reason: 'load-failed',
     })
+    // A confirmed-locked credential is the sole per-row exclusion reason,
+    // folded into this catch-all once no candidate row survives — mixed with
+    // a surviving sibling in the previous test.
     expect(onboardingReadiness(state({
-      rows: [row({ entry: { ...row().entry, active: false } })],
-    }))).toEqual({ kind: 'unavailable', reason: 'provider-inactive' })
+      rows: [row({ credential: { configured: false, writable: false } })],
+    }))).toEqual({ kind: 'unavailable', reason: 'no-provider-available' })
     expect(onboardingReadiness(state({
       credentialError: 'credentials service is absent',
     }))).toEqual({
       kind: 'unavailable',
       reason: 'credentials-unavailable',
     })
-    expect(onboardingReadiness(state({
-      rows: [row({ credential: undefined })],
-    }))).toEqual({ kind: 'unavailable', reason: 'credentials-unavailable' })
-    expect(onboardingReadiness(state({
-      rows: [row({ credential: { configured: false, writable: false } })],
-    }))).toEqual({ kind: 'unavailable', reason: 'credential-read-only' })
     expect(onboardingReadiness(state({ writable: false }))).toEqual({
       kind: 'unavailable',
       reason: 'settings-read-only',

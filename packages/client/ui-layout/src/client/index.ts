@@ -71,6 +71,18 @@ declare module '@deepseek-ai/dsh-client-ui-slots' {
      */
     'details': { kind: 'single'; scope: 'session'; owner: DetailsOwnerProps }
     /**
+     * The right workspace-tree column, shown when the layout opens it (via
+     * `ctx.layout.openTree()`/`closeTree()`). Unlike `details` this is
+     * workspace-scoped, not session-scoped — it renders regardless of
+     * whether a session is current. Absent an occupant the column renders
+     * nothing.
+     *
+     * No owner props: the framework injects hooks for the `root` scope; the
+     * occupant resolves the active workspace itself (session → workspace
+     * join) and owns its own open/collapsed control.
+     */
+    'workspaceTree': { kind: 'single'; scope: 'root'; owner: WorkspaceTreeOwnerProps }
+    /**
      * Frame-wide floating layer, above every column and outside their scroll
      * containers. Deliberately generic and unowned by any feature: a badge, a
      * toast stack or a status pill all belong here, and entries order among
@@ -104,6 +116,9 @@ export interface ConvOwnerProps {}
 /** Details owner share: empty — sessionId arrives as a framework-standard prop. */
 export interface DetailsOwnerProps {}
 
+/** Workspace-tree owner share: empty — the occupant resolves its own workspace and open state. */
+export interface WorkspaceTreeOwnerProps {}
+
 /** Required services (cordis fiber inject — the loader passes all module exports as an object plugin). */
 export const inject = ['slots', 'theme']
 
@@ -123,6 +138,7 @@ export function apply(ctx: ClientContext): void {
         'sidebar': { kind: 'single', scope: 'root' },
         'conversation': { kind: 'single', scope: 'session-maybe' },
         'details': { kind: 'single', scope: 'session' },
+        'workspaceTree': { kind: 'single', scope: 'root' },
         'shell.overlay': { kind: 'list', scope: 'root' },
       },
       // Exclusive store: the factory itself — the framework instantiates per

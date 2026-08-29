@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, mkdtempSync, realpathSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
@@ -225,6 +225,55 @@ describe('host.listDirectory / host.createDirectory', () => {
     expect((await api.host.createDirectory(request({ path: '/x', name: 'y' }))).result).toMatchObject({
       ok: false, error: { code: 'directory-picker-unavailable', details: { capability: 'native' } },
     })
+  })
+})
+
+describe('host.listWorkspaceEntries', () => {
+  it('lists directories before files, each name-sorted, with hidden dot-entries flagged', async () => {
+    const { api, root } = await harness()
+    stageDir(root, 'zeta')
+    stageDir(root, 'alpha')
+    writeFileSync(join(root, 'readme.md'), '# hi')
+    writeFileSync(join(root, '.env'), 'SECRET=1')
+    const response = await api.host.listWorkspaceEntries(request({ path: root }), new AbortController().signal)
+    expect(response.result).toMatchObject({
+      ok: true,
+      value: {
+        path: root,
+        truncated: false,
+        entries: [
+          { name: 'alpha', kind: 'directory', hidden: false, path: join(root, 'alpha') },
+          { name: 'zeta', kind: 'directory', hidden: false, path: join(root, 'zeta') },
+          { name: '.env', kind: 'file', hidden: true, path: join(root, '.env') },
+          { name: 'readme.md', kind: 'file', hidden: false, path: join(root, 'readme.md') },
+        ],
+      },
+    })
+  })
+
+  it('refuses a path that is not fully qualified', async () => {
+    const { api } = await harness()
+    const response = await api.host.listWorkspaceEntries(request({ path: 'relative/path' }), new AbortController().signal)
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+  })
+
+  it('maps a missing target or a file target to directory-unreadable', async () => {
+    const { api, root } = await harness()
+    const missing = await api.host.listWorkspaceEntries(request({ path: join(root, 'nope') }), new AbortController().signal)
+    expect(missing.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+    writeFileSync(join(root, 'not-a-dir'), 'x')
+    const notADir = await api.host.listWorkspaceEntries(
+      request({ path: join(root, 'not-a-dir') }), new AbortController().signal,
+    )
+    expect(notADir.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+  })
+
+  it('reports an already-aborted request as cancelled without touching the filesystem', async () => {
+    const { api, root } = await harness()
+    const abort = new AbortController()
+    abort.abort()
+    const response = await api.host.listWorkspaceEntries(request({ path: root }), abort.signal)
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'cancelled' } })
   })
 })
 

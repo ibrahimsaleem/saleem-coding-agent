@@ -6,7 +6,9 @@
  * the concrete class. Widening this interface is the explicit act of
  * widening what features may do to the workspaces domain.
  */
-import type { DirectoryListing, SessionId, WorkspaceId, WorkspaceView } from '@deepseek-ai/dsh-api-remotes/client'
+import type {
+  DirectoryListing, SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceView,
+} from '@deepseek-ai/dsh-api-remotes/client'
 import type { WorkspaceListState } from '../workspaces/service.ts'
 import type { ObservableSnapshot } from './store.ts'
 
@@ -46,6 +48,16 @@ export interface IWorkspaces {
    * @returns the level's listing with breadcrumb ancestry.
    */
   listDirectory(path?: string, signal?: AbortSignal): Promise<DirectoryListing>
+  /**
+   * List one directory's files and subdirectories, for the workspace
+   * file-tree panel. Unlike `listDirectory` (directories only, whole
+   * filesystem), this returns both kinds and is meant to be called only with
+   * paths inside an already-open workspace.
+   * @param path - fully qualified directory to list.
+   * @param signal - aborts the wire request when the caller supersedes it.
+   * @returns the level's files and subdirectories.
+   */
+  listWorkspaceEntries(path: string, signal?: AbortSignal): Promise<WorkspaceEntryListing>
   /**
    * Create one child directory through the Host's `browse` capability.
    * @param path - absolute existing parent directory.

@@ -20,6 +20,27 @@ import type { SettingsSchemaOperations } from './schema-operations.ts'
  */
 const PROBE_ROUTE = '\u0000probe'
 
+/**
+ * Per-adapter-family curated field sets a {@link ProviderEditor} card can
+ * render (unknown namespaces get the hint alone, with no credential field —
+ * see `ProviderEditor.curatedFields`).
+ */
+export type EditorLayout = 'deepseek' | 'pi-ai' | 'unknown'
+
+/**
+ * The editor layout the owning namespace selects. Shared between
+ * {@link ProviderEditor}, which renders the family's curated fields, and
+ * {@link onboardingReadiness}, which needs to know whether a row's namespace
+ * has a card that can take a credential at all.
+ * @param ns - the provider row's settings namespace.
+ * @returns the family the namespace renders as.
+ */
+export function layoutOf(ns: string): EditorLayout {
+  if (ns === 'llm-deepseek') return 'deepseek'
+  if (ns === 'llm-pi-ai') return 'pi-ai'
+  return 'unknown'
+}
+
 /** One provider row the page renders. */
 export interface ProviderRow {
   /** The directory entry (route id, display name, settings address, live state). */
@@ -229,24 +250,42 @@ export type OnboardingReadiness =
   | { kind: 'loading' }
   | { kind: 'adapter-absent' }
   | { kind: 'provider-ready' }
-  | { kind: 'credential-missing' }
+  /** `rows` are the providers the prompt can take a credential for, in directory order. */
+  | { kind: 'credential-missing'; rows: readonly ProviderRow[] }
   | {
     kind: 'unavailable'
     reason:
       | 'load-failed'
-      | 'provider-inactive'
       | 'credentials-unavailable'
       | 'settings-read-only'
-      | 'credential-read-only'
+      /**
+       * Every editable row was excluded for carrying a credential confirmed to
+       * reject writes in this browser, rather than by one global cause — a
+       * single locked row does not warrant its own top-level reason now that
+       * a sibling candidate could otherwise have kept the step open.
+       */
+      | 'no-provider-available'
   }
 
 /**
  * Project first-run readiness from the provider/settings/credential join used
  * by the Models page. The step exists to leave the user with a model to talk
- * to, so ANY usable provider ends it; only when none exists does the official
- * DeepSeek route — the one route the prompt can offer a key field for — decide
- * whether prompting can help. A missing official configurable-provider
- * declaration means the adapter is not repairable by navigating to Models.
+ * to, so ANY usable provider ends it. Otherwise every row whose namespace a
+ * provider-editor card can render a credential field for (any layout but
+ * `unknown`, per {@link layoutOf}) is a candidate the prompt can offer — this
+ * intentionally includes an inactive (not yet configured) catalog route: for
+ * the pi-ai family in particular, every installed catalog provider (`openai`,
+ * `anthropic`, `gemini`, …) is declared and editable from the moment its
+ * plugin mounts, dormant or not, precisely so a first-run user can pick any of
+ * them here rather than only whichever one happens to already be live. Only a
+ * row whose stored credential is confirmed to reject writes is excluded,
+ * rather than failing the whole step, since a sibling candidate may still be
+ * writable. A row whose credential describe never resolved (routine for a
+ * route that has never had a key saved — its profile names no reference for
+ * the store to describe) stays offerable too: the card itself re-describes
+ * the derived reference independently once it renders, so the store's join is
+ * not the last word on it. No candidate at all means the adapter is not
+ * repairable by navigating to Models.
  * @param state - current shared Models join snapshot.
  * @returns the onboarding state without reading a parallel fact source.
  */
@@ -261,20 +300,11 @@ export function onboardingReadiness(state: ModelsSettingsState): OnboardingReadi
     }
   }
   if (state.rows.some(providerUsable)) return { kind: 'provider-ready' }
-  const row = state.rows.find(candidate =>
-    candidate.entry.provider === 'deepseek-official'
-    && candidate.entry.settingsNs === 'llm-deepseek'
-    && candidate.entry.settingsPath.length === 0)
-  if (row === undefined) return { kind: 'adapter-absent' }
-  if (!row.entry.active) {
-    return {
-      kind: 'unavailable',
-      reason: 'provider-inactive',
-    }
-  }
-  // Past the usable gate an active route names a reference it has no stored
-  // credential for, so the remaining questions are all about that credential.
-  if (state.credentialError !== null || row.credential === undefined) {
+  const editable = state.rows.filter(row => layoutOf(row.entry.settingsNs) !== 'unknown')
+  if (editable.length === 0) return { kind: 'adapter-absent' }
+  // Past the usable gate an editable row names a reference it has no stored
+  // credential for, so the remaining questions are about that credential.
+  if (state.credentialError !== null) {
     return {
       kind: 'unavailable',
       reason: 'credentials-unavailable',
@@ -286,11 +316,7 @@ export function onboardingReadiness(state: ModelsSettingsState): OnboardingReadi
       reason: 'settings-read-only',
     }
   }
-  if (!row.credential.writable) {
-    return {
-      kind: 'unavailable',
-      reason: 'credential-read-only',
-    }
-  }
-  return { kind: 'credential-missing' }
+  const offerable = editable.filter(row => row.credential?.writable !== false)
+  if (offerable.length === 0) return { kind: 'unavailable', reason: 'no-provider-available' }
+  return { kind: 'credential-missing', rows: offerable }
 }

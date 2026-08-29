@@ -48,6 +48,17 @@
   border-left: none;
 }
 
+.treeCol {
+  min-width: 0;
+  overflow: hidden;
+  border-left: 1px solid var(--dsw-alias-border-l2);
+}
+
+/* Same zero-width-stays-mounted rule as .detailsCol. */
+.frame[data-tree-collapsed] .treeCol {
+  border-left: none;
+}
+
 /* Drag handles are frame children (columns clip overflow): an 8px hit strip
    centered on the column border via inline left, above column content. Details
    adds a visible 12x32 pill at vertical center; sidebar keeps only the hit strip. */
@@ -103,6 +114,36 @@
 
 .handle[data-side='details']:hover::after,
 .handle[data-side='details'][data-dragging='true']::after {
+  background: var(--dsw-alias-button-floating-hover);
+  border-color: var(--dsw-alias-border-l3);
+}
+
+.handle[data-side='tree']::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 32px;
+  border-radius: 10px;
+  box-sizing: border-box;
+  background: var(--dsw-alias-button-floating-fill);
+  border: 1px solid var(--dsw-alias-border-l2-darkmode-thin);
+  opacity: 0;
+  transition:
+    opacity var(--ds-transition-duration-slow) var(--ds-ease-in-out),
+    background var(--ds-transition-duration-slow) var(--ds-ease-in-out);
+}
+
+.treeCol:hover ~ .handle[data-side='tree']::after,
+.handle[data-side='tree']:hover::after,
+.handle[data-side='tree'][data-dragging='true']::after {
+  opacity: 1;
+}
+
+.handle[data-side='tree']:hover::after,
+.handle[data-side='tree'][data-dragging='true']::after {
   background: var(--dsw-alias-button-floating-hover);
   border-color: var(--dsw-alias-border-l3);
 }

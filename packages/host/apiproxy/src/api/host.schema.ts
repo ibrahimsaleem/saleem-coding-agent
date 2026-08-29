@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod'
-import type { DirectoryEntry } from './host.ts'
+import type { DirectoryEntry, WorkspaceEntry } from './host.ts'
 import type { RequestPayload, ResponseValue } from './rpc-map.ts'
 import type { Wire } from './rpc.schema.ts'
 
@@ -49,6 +49,26 @@ export const hostListDirectoryValueSchema = z.object({
   entries: z.array(directoryEntrySchema),
   truncated: z.boolean(),
 }) satisfies z.ZodType<Wire<ResponseValue<'host.listDirectory'>>>
+
+/** Workspace-tree row: a file or a subdirectory. */
+export const workspaceEntrySchema = z.object({
+  name: z.string(),
+  path: z.string(),
+  kind: z.enum(['directory', 'file']),
+  hidden: z.boolean(),
+}) satisfies z.ZodType<Wire<WorkspaceEntry>>
+
+/** host.listWorkspaceEntries request payload; path must be fully qualified. */
+export const hostListWorkspaceEntriesRequestSchema = z.object({
+  path: z.string().min(1),
+}) satisfies z.ZodType<Wire<RequestPayload<'host.listWorkspaceEntries'>>>
+
+/** host.listWorkspaceEntries response value. */
+export const hostListWorkspaceEntriesValueSchema = z.object({
+  path: z.string(),
+  entries: z.array(workspaceEntrySchema),
+  truncated: z.boolean(),
+}) satisfies z.ZodType<Wire<ResponseValue<'host.listWorkspaceEntries'>>>
 
 /** host.createDirectory request payload: name must be one plain path segment. */
 export const hostCreateDirectoryRequestSchema = z.object({

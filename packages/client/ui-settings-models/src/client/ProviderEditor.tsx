@@ -30,13 +30,12 @@ import {
 import { apiKeyFailure } from './apiKey.ts'
 import { EditorFooter } from './EditorFooter.tsx'
 import { ModelListEditor } from './ModelListEditor.tsx'
-import { deriveKeyRef, messageOf, protocolChoices } from './store.ts'
+import {
+  deriveKeyRef, layoutOf, messageOf, protocolChoices,
+} from './store.ts'
 import type { SettingsSchemaOperations } from './schema-operations.ts'
 import type { en } from './locales.ts'
 import styles from './ModelsSection.module.css'
-
-/** Per-adapter-family curated field sets (unknown namespaces get the hint alone). */
-type EditorLayout = 'deepseek' | 'pi-ai' | 'unknown'
 
 /** The public DeepSeek endpoint shown as the deepseek base-URL placeholder. */
 const DEEPSEEK_PUBLIC_BASE_URL = 'https://api.deepseek.com'
@@ -123,13 +122,6 @@ export function pathOps(
     if (!(key in after)) ops.push({ op: 'unset', path: [...base, key] })
   }
   return ops
-}
-
-/** The editor layout the owning namespace selects. */
-function layoutOf(ns: string): EditorLayout {
-  if (ns === 'llm-deepseek') return 'deepseek'
-  if (ns === 'llm-pi-ai') return 'pi-ai'
-  return 'unknown'
 }
 
 /** The credential reference this profile resolves keys through. */
@@ -273,7 +265,14 @@ export function ProviderEditor(props: ProviderEditorProps): ReactNode {
       && fallback === undefined
       && committedOriginal === undefined
       && Object.keys(next).length === 0
-    const ops: SettingsPathOpView[] = props.credentialOnly === true
+    // credentialOnly normally writes nothing but the key — the onboarding
+    // prompt's whole job. A pi-ai route this deployment has never configured
+    // is the one exception: with no stored profile, the reference `next`
+    // names above resolves nowhere, so the key would be stored under a ref
+    // `resolveProfiles` never sees. The one-op write that names it (the same
+    // op a first save from the full Models card would make) runs even here.
+    const mustMaterializeRoute = layout === 'pi-ai' && fallback === undefined
+    const ops: SettingsPathOpView[] = props.credentialOnly === true && !mustMaterializeRoute
       ? []
       : materializesNativeProfile
         ? [{ op: 'set', path: [...settingsPath], value: {} }]

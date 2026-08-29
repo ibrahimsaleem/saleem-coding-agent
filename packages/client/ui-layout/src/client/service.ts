@@ -27,6 +27,10 @@ export interface ILayout {
   openDetails(): void
   /** Close the details panel. */
   closeDetails(): void
+  /** Open the workspace-tree panel (no-op when already open). */
+  openTree(): void
+  /** Close the workspace-tree panel. */
+  closeTree(): void
 }
 
 /** Cross-plugin panel-action face (ctx.layout). */
@@ -57,6 +61,16 @@ export class LayoutController implements ILayout {
   /** Close the details panel. */
   closeDetails(): void {
     this.#require().closeDetails()
+  }
+
+  /** Open the workspace-tree panel (no-op when already open). */
+  openTree(): void {
+    this.#require().openTree()
+  }
+
+  /** Close the workspace-tree panel. */
+  closeTree(): void {
+    this.#require().closeTree()
   }
 
   #require(): PanelActions {

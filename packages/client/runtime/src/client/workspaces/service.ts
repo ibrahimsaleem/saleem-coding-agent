@@ -3,7 +3,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {
   DirectoryListing, IApiClient, RpcError,
-  SessionId, WorkspaceId, WorkspaceView,
+  SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SnapshotStore } from '../contract/store.ts'
 import { createSnapshotStore } from '../contract/store.ts'
@@ -222,6 +222,19 @@ export class WorkspaceRuntime implements IWorkspaces {
    */
   async listDirectory(path?: string, signal?: AbortSignal): Promise<DirectoryListing> {
     const response = await this.api.host.listDirectory(path === undefined ? {} : { path }, signal)
+    if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
+    return response.result.value
+  }
+
+  /**
+   * List one directory's files and subdirectories, for the workspace
+   * file-tree panel.
+   * @param path - fully qualified directory to list.
+   * @param signal - aborts the wire request when the caller supersedes it.
+   * @returns the level's files and subdirectories.
+   */
+  async listWorkspaceEntries(path: string, signal?: AbortSignal): Promise<WorkspaceEntryListing> {
+    const response = await this.api.host.listWorkspaceEntries({ path }, signal)
     if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
     return response.result.value
   }

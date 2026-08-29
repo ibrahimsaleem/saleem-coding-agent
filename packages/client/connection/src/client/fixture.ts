@@ -2639,6 +2639,26 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
           truncated: false,
         })
       },
+      listWorkspaceEntries: (request) => {
+        const target = request.payload.path
+        const children = childrenOf(target)
+        if (children === undefined) {
+          return err(request, { code: 'directory-unreadable', message: `cannot list ${target}: not in the fixture tree`, details: { path: target } })
+        }
+        return ok(request, {
+          path: target,
+          // The fixture tree models directories only (same source as
+          // listDirectory above); every fixture row is reported as one.
+          entries: [...children].sort((a, b) => a.localeCompare(b))
+            .map(name => ({
+              name,
+              path: target === '/' ? `/${name}` : `${target}/${name}`,
+              kind: 'directory' as const,
+              hidden: name.startsWith('.'),
+            })),
+          truncated: false,
+        })
+      },
       createDirectory: (request) => {
         const parent = request.payload.path
         const children = childrenOf(parent)
@@ -3194,6 +3214,7 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'host.describe': return this.api.host.describe(request)
       case 'host.pickDirectory': return this.api.host.pickDirectory(request, new AbortController().signal)
       case 'host.listDirectory': return this.api.host.listDirectory(request, new AbortController().signal)
+      case 'host.listWorkspaceEntries': return this.api.host.listWorkspaceEntries(request, new AbortController().signal)
       case 'host.createDirectory': return this.api.host.createDirectory(request)
       case 'host.openPath': return this.api.host.openPath(request, new AbortController().signal)
       case 'workspace.list': return this.api.workspace.list(request)

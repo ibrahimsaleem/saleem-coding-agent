@@ -18,6 +18,7 @@ import {
   hostCreateDirectoryRequestSchema, hostCreateDirectoryValueSchema,
   hostDescribeRequestSchema, hostDescribeValueSchema,
   hostListDirectoryRequestSchema, hostListDirectoryValueSchema,
+  hostListWorkspaceEntriesRequestSchema, hostListWorkspaceEntriesValueSchema,
 } from '../src/api/host.schema.ts'
 import {
   workspaceArchiveSessionRequestSchema, workspaceArchiveSessionValueSchema,
@@ -344,6 +345,28 @@ describe('host domain schemas', () => {
       expect(() => hostCreateDirectoryRequestSchema.parse({ path: '/x', name })).toThrow()
     }
     expect(hostCreateDirectoryValueSchema.parse({ path: '/x/new' })).toEqual({ path: '/x/new' })
+  })
+
+  it('validates the workspace-entries listing payloads', () => {
+    expect(() => hostListWorkspaceEntriesRequestSchema.parse({})).toThrow()
+    expect(hostListWorkspaceEntriesRequestSchema.parse({ path: '/ws' })).toEqual({ path: '/ws' })
+    const listing = hostListWorkspaceEntriesValueSchema.parse({
+      path: '/ws',
+      entries: [
+        { name: 'src', path: '/ws/src', kind: 'directory', hidden: false },
+        { name: '.env', path: '/ws/.env', kind: 'file', hidden: true },
+      ],
+      truncated: false,
+    })
+    expect(listing.entries[0]).toMatchObject({ kind: 'directory', hidden: false })
+    expect(listing.entries[1]).toMatchObject({ kind: 'file', hidden: true })
+    expect(() => hostListWorkspaceEntriesValueSchema.parse({
+      path: '/ws',
+      entries: [{ name: 'x', path: '/ws/x', kind: 'symlink', hidden: false }],
+      truncated: false,
+    })).toThrow()
+    // The flag is part of the wire value, not an optional decoration.
+    expect(() => hostListWorkspaceEntriesValueSchema.parse({ path: '/ws', entries: [] })).toThrow()
   })
 })
 

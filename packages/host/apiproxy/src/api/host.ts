@@ -32,6 +32,28 @@ export interface DirectoryListing {
   truncated: boolean
 }
 
+/** One row of a workspace-entry listing: a child file or directory. */
+export interface WorkspaceEntry {
+  /** Base name shown in a tree row. */
+  name: string
+  /** Absolute host path — the client never joins path segments itself. */
+  path: string
+  /** Whether this row is a directory (client renders a folder row and may list into it) or a file. */
+  kind: 'directory' | 'file'
+  /** Hidden by the host platform's convention (dot-prefixed on POSIX); the client owns whether to show it. */
+  hidden: boolean
+}
+
+/** host.listWorkspaceEntries response value: one directory level's files and subdirectories. */
+export interface WorkspaceEntryListing {
+  /** Absolute path of the listed directory. */
+  path: string
+  /** Direct children, directories first then files, each group name-sorted. */
+  entries: WorkspaceEntry[]
+  /** True when the backend cut `entries` at its complete-result bound (the name-sorted tail is absent). */
+  truncated: boolean
+}
+
 /** Host-level unary methods. */
 export interface HostApi {
   /**
@@ -74,6 +96,21 @@ export interface HostApi {
     request: RpcRequest<{ path?: string }>,
     signal: AbortSignal,
   ): Promise<RpcResponse<DirectoryListing>>
+
+  /**
+   * List one directory level's files and subdirectories, for the workspace
+   * file-tree panel. Unlike `listDirectory` (directories only, whole
+   * filesystem, for the workspace-root picker), this returns both kinds and
+   * is meant to be called only with paths inside an already-open workspace.
+   * `path` must be fully qualified (no relative or cwd-relative resolution);
+   * an unreadable or missing target fails with `directory-unreadable`. The
+   * carrier's request signal follows the caller, stopping the scan on
+   * disconnect or timeout.
+   */
+  listWorkspaceEntries(
+    request: RpcRequest<{ path: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<WorkspaceEntryListing>>
 
   /**
    * Create one child directory under an existing parent (the browser's
