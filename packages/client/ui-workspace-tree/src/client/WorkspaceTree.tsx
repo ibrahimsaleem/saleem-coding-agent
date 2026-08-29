@@ -82,7 +82,6 @@ function useLevel(
     return () => { controller.abort() }
     // Re-running only on the fields that change what should be loaded: a
     // `state` dependency would refetch the instant setState above lands.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, path, listWorkspaceEntries])
   return state
 }
