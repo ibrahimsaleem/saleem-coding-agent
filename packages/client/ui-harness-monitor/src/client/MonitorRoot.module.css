@@ -1,0 +1,255 @@
+/* Harness observability panel. Full-viewport overlay (position:fixed), the
+   same technique the Settings panel uses. Tokens are the shared `--dsw-*` set;
+   the panel's accent mirrors the app's primary. */
+
+.panel { --monitor-accent: var(--dsw-alias-button-info-fill); }
+
+.trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  cursor: pointer;
+}
+.trigger:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.triggerRail { justify-content: center; }
+.triggerIcon { font-size: 14px; line-height: 1; }
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mask {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: min(1080px, 94vw);
+  height: min(820px, 92vh);
+  border-radius: 14px;
+  background: var(--dsw-alias-bg-layer-1);
+  border: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  /* Elevated surface (a floating modal card): the descendant scrollers
+     (.body, .tlDetail) inherit the l2 scrollbar elevation from here — see
+     ui-theme styles/scrollbar.css for the rebinding contract. */
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.heading { margin: 0; font-size: 15px; font-weight: 600; }
+.headerMeta { color: var(--dsw-alias-label-tertiary); font-size: 12px; }
+.closeButton {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+.closeButton:hover { background: var(--dsw-alias-interactive-bg-hover); }
+
+.errorBar {
+  padding: 8px 18px;
+  background: var(--dsw-alias-state-error-secondary);
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 8px 14px 0;
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+}
+.tab {
+  border: none;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  padding: 8px 12px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+}
+.tab:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.tabActive { color: var(--monitor-accent); box-shadow: inset 0 -2px 0 var(--monitor-accent); }
+
+.body { flex: 1; overflow: auto; padding: 16px 18px; }
+.section { display: flex; flex-direction: column; gap: 16px; }
+.sectionActions { display: flex; align-items: center; gap: 10px; }
+.empty { padding: 40px; text-align: center; color: var(--dsw-alias-label-tertiary); }
+
+.statGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2);
+  border: 1px solid var(--dsw-alias-border-l1);
+}
+.statValue { font-size: 20px; font-weight: 600; }
+.statLabel { font-size: 11px; color: var(--dsw-alias-label-tertiary); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat_ok .statValue { color: var(--dsw-alias-state-success-primary); }
+.stat_warn .statValue { color: var(--dsw-alias-state-warn-primary); }
+.stat_danger .statValue { color: var(--dsw-alias-state-error-primary); }
+
+.chartRow { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.chartCard {
+  margin: 0;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2);
+  border: 1px solid var(--dsw-alias-border-l1);
+}
+.chartCard figcaption { font-size: 12px; color: var(--dsw-alias-label-tertiary); margin-bottom: 8px; }
+
+.donutWrap { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.donut { flex: 0 0 auto; }
+.legend { list-style: none; margin: 0; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.swatch { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.spark { display: block; }
+
+.bars { display: flex; flex-direction: column; gap: 6px; }
+.barRow { display: grid; grid-template-columns: 120px 1fr 48px; align-items: center; gap: 8px; font-size: 12px; }
+.barName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.barTrack { height: 8px; border-radius: 4px; background: var(--dsw-alias-border-l2); overflow: hidden; }
+.barFill { display: block; height: 100%; background: var(--monitor-accent); }
+.barNum { text-align: right; color: var(--dsw-alias-label-tertiary); }
+
+.table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--dsw-alias-label-tertiary);
+  border-bottom: 1px solid var(--dsw-alias-border-l2);
+  font-weight: 500;
+}
+.table td { padding: 6px 8px; border-bottom: 1px solid var(--dsw-alias-border-l1); vertical-align: top; }
+.rowLink { cursor: pointer; }
+.rowLink:hover td { background: var(--dsw-alias-interactive-bg-hover); }
+
+.subtle { color: var(--dsw-alias-label-tertiary); }
+.badge, .badgeOk, .badgeDanger, .badgeWarn {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-right: 4px;
+}
+/* color-mix keeps the fill a light tint even where the theme aliases the
+   primary and secondary state colors to the same value in dark mode. */
+.badge { background: var(--dsw-alias-border-l2); color: var(--dsw-alias-label-secondary); }
+.badgeOk {
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary) 16%, transparent);
+  color: var(--dsw-alias-state-success-primary);
+}
+.badgeDanger {
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 16%, transparent);
+  color: var(--dsw-alias-state-error-primary);
+}
+.badgeWarn {
+  background: color-mix(in srgb, var(--dsw-alias-state-warn-primary) 16%, transparent);
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.snippet {
+  display: block;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--ds-font-family-code, monospace);
+}
+
+.smallButton {
+  border: 1px solid var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.smallButton:hover { background: var(--dsw-alias-interactive-bg-hover); }
+.smallButton:disabled { opacity: 0.5; cursor: default; }
+.dangerButton { color: var(--dsw-alias-state-error-primary); border-color: var(--dsw-alias-state-error-primary); }
+
+.guardCard {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px;
+  border-radius: 10px;
+  background: var(--dsw-alias-bg-layer-2);
+  border: 1px solid var(--dsw-alias-border-l1);
+}
+.guardCardArmed { border-color: var(--dsw-alias-state-error-primary); }
+.guardCard p { margin: 6px 0 0; font-size: 12px; max-width: 46ch; }
+.guardActions { display: flex; flex-direction: column; gap: 6px; flex: 0 0 auto; }
+
+.timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tlItem {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--dsw-alias-bg-layer-2);
+  font-size: 12px;
+}
+.tlDivider { background: transparent; padding: 2px 10px; border-bottom: 1px dashed var(--dsw-alias-border-l2); border-radius: 0; }
+.tlTime { color: var(--dsw-alias-label-tertiary); }
+.tlLabel { font-weight: 500; }
+.tlDetail {
+  grid-column: 2;
+  margin: 6px 0 0;
+  max-height: 160px;
+  overflow: auto;
+  white-space: pre-wrap;
+  font-family: var(--ds-font-family-code, monospace);
+  font-size: 11px;
+  color: var(--dsw-alias-label-secondary);
+  background: var(--dsw-alias-bg-layer-1);
+  padding: 6px 8px;
+  border-radius: 6px;
+}

@@ -152,6 +152,33 @@ describe('WorkspaceTree', () => {
     expect(listWorkspaceEntries).toHaveBeenCalledTimes(2)
   })
 
+  it('refetches the root level when rootPath changes under an already-mounted panel (session switch)', async () => {
+    const listingA: WorkspaceEntryListing = {
+      path: '/ws-a', entries: [{ name: 'a.ts', path: '/ws-a/a.ts', kind: 'file', hidden: false }], truncated: false,
+    }
+    const listingB: WorkspaceEntryListing = {
+      path: '/ws-b', entries: [{ name: 'b.ts', path: '/ws-b/b.ts', kind: 'file', hidden: false }], truncated: false,
+    }
+    const listWorkspaceEntries = vi.fn((path: string) => {
+      if (path === '/ws-a') return Promise.resolve(listingA)
+      if (path === '/ws-b') return Promise.resolve(listingB)
+      throw new Error(`unexpected path ${path}`)
+    })
+    const { rerender } = render(
+      <WorkspaceTree rootPath="/ws-a" listWorkspaceEntries={listWorkspaceEntries} onOpen={vi.fn()} onClose={vi.fn()} t={t} />,
+    )
+    expect(await screen.findByText('a.ts')).toBeTruthy()
+
+    // Same occupant, no remount — this is what a session switch looks like:
+    // the owner's rootPath prop changes underneath a long-lived component.
+    rerender(
+      <WorkspaceTree rootPath="/ws-b" listWorkspaceEntries={listWorkspaceEntries} onOpen={vi.fn()} onClose={vi.fn()} t={t} />,
+    )
+    expect(await screen.findByText('b.ts')).toBeTruthy()
+    expect(screen.queryByText('a.ts')).toBeNull()
+    expect(listWorkspaceEntries).toHaveBeenCalledTimes(2)
+  })
+
   it('aborts a superseded fetch when the row collapses before it settles', async () => {
     const first = deferred<WorkspaceEntryListing>()
     const listWorkspaceEntries = vi.fn((path: string) => (path === '/ws' ? first.promise : new Promise<WorkspaceEntryListing>(() => {})))

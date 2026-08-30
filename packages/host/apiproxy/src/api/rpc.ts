@@ -92,6 +92,8 @@ export interface RpcErrorDetailsMap {
   'subagent-not-resumable': { childSessionId: SessionId }
   'subagent-unauthorized': { childSessionId: SessionId }
   'subagent-delivery-unavailable': { childSessionId: SessionId }
+  /** A monitor drill-down named a session id no on-disk log matches. */
+  'monitor-session-not-found': { sessionId: string }
   'internal': {}
 }
 

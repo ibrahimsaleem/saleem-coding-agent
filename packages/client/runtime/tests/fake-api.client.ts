@@ -2,7 +2,7 @@
 // data source on a real clock; behavior tests need per-case responses and
 // deferred-controlled timing). Streams are hand pumps: pushMux/pushHost.
 import type {
-  ClientResponse, HostFrame, IApiClient, ModelSelection, MuxFrame,
+  ClientResponse, HostFrame, IApiClient, ModelSelection, MonitorSnapshot, MuxFrame,
   RpcError, RpcReceipt, RpcRequest, RpcResponse, SessionId, SessionModels, SessionSearchItem, SkillEntry,
   WorkspaceId, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
@@ -43,6 +43,24 @@ let nextRpc = 0
 
 export function ok<T>(value: T): RpcResponse<T> {
   return { rpcId: RpcId(`fake-${nextRpc++}`), result: { ok: true, value } }
+}
+
+/** Minimal well-formed monitor snapshot for the fake client. */
+function fakeMonitorSnapshot(): MonitorSnapshot {
+  return {
+    generatedAt: 0,
+    homeLabel: '~/.dsh',
+    summary: {
+      sessionCount: 0, runningSessions: 0, processCount: 0, totalTurns: 0, totalPrompts: 0,
+      totalToolCalls: 0, totalRetries: 0, totalErrors: 0, modelsConnected: 0,
+      securityFindingsCount: 0, riskyPermissionSessions: 0,
+      tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+      estimatedCostUsd: 0, hasUnknownCost: false,
+    },
+    models: [], toolCallCounts: {}, sessions: [], processes: [], securityFindings: [],
+    permissionEvents: [], activityTimeline: [], history: [],
+    guard: { armed: false, armedAt: null, events: [] },
+  }
 }
 
 export function err<T>(error: RpcError): RpcResponse<T> {
@@ -285,6 +303,17 @@ export class FakeApiClient implements IApiClient {
     providers: payload => this.record('llm.providers', payload, Promise.resolve(ok({ providers: [] }))),
     models: payload => this.record('llm.models', payload, Promise.resolve(ok({ groups: [], failures: [] }))),
     discoverModels: payload => this.record('llm.discoverModels', payload, Promise.resolve(ok({ models: [] }))),
+  }
+
+  readonly monitor: IApiClient['monitor'] = {
+    snapshot: payload => this.record('monitor.snapshot', payload, Promise.resolve(ok(fakeMonitorSnapshot()))),
+    sessionTimeline: payload => this.record('monitor.sessionTimeline', payload, Promise.resolve(ok({
+      sessionId: 'fake', cwd: null, timeline: [], hasMore: false, oldestSeq: null,
+    }))),
+    setGuardArmed: payload => this.record('monitor.setGuardArmed', payload, Promise.resolve(ok({ armed: false, armedAt: null, events: [] }))),
+    killNow: payload => this.record('monitor.killNow', payload, Promise.resolve(ok({ killed: [] }))),
+    exportJson: payload => this.record('monitor.exportJson', payload, Promise.resolve(ok(fakeMonitorSnapshot()))),
+    exportCsv: payload => this.record('monitor.exportCsv', payload, Promise.resolve(ok({ csv: '' }))),
   }
 
   /** When true, streams never fire onOpen (misbehaving-carrier material for the handshake timeout guard). */

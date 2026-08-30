@@ -29,6 +29,10 @@ export type {
   GoalsApi, GoalRef,
   SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView,
   CredentialsApi, CredentialView, ConfigurableProviderView, DiscoveredModelView, LlmApi,
+  MonitorApi, MonitorSnapshot, MonitorSession, MonitorSecurityFinding, MonitorPermissionEvent,
+  MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
+  MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,
+  MonitorCostByModel, MonitorSessionTimeline, MonitorTimelineEntry, MonitorTokenUsage, MonitorPermissions,
 } from './api.ts'
 export {
   RpcId,

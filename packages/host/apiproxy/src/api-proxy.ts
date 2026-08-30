@@ -65,6 +65,8 @@ import type {} from '@deepseek-ai/dsh-jobs'
 import type { JobSnapshot } from '@deepseek-ai/dsh-jobs'
 // Type-only: resolves `ctx.get('sessionProjectionCache')` (the cold listing column).
 import type {} from '@deepseek-ai/dsh-session-projection-cache'
+// Type-only: resolves `ctx.harnessMonitor` (the observability service the monitor domain forwards to).
+import type {} from '@deepseek-ai/dsh-host-harness-monitor'
 // GoalError narrows domain rejections to their stable codes at the wire boundary.
 import { GoalError } from '@deepseek-ai/dsh-goal'
 import type { GoalRef as CoreGoalRef } from '@deepseek-ai/dsh-goal'
@@ -2987,6 +2989,42 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
 
       async openPath(request, signal) {
         return openPath(request, request.payload.path, signal)
+      },
+    },
+
+    monitor: {
+      // Thin pass-through to ctx.harnessMonitor — all aggregation, the poll
+      // loop, and the guard state live in that service.
+      snapshot(request) {
+        return Promise.resolve(ok(request, ctx.harnessMonitor.getSnapshot()))
+      },
+      async sessionTimeline(request) {
+        const { sessionId, limit, beforeSeq } = request.payload
+        const page = await ctx.harnessMonitor.getSessionTimeline({
+          sessionId,
+          ...limit === undefined ? {} : { limit },
+          ...beforeSeq === undefined ? {} : { beforeSeq },
+        })
+        if (page === null) {
+          return err(request, {
+            code: 'monitor-session-not-found',
+            message: `no session log matches "${sessionId}"`,
+            details: { sessionId },
+          })
+        }
+        return ok(request, page)
+      },
+      setGuardArmed(request) {
+        return Promise.resolve(ok(request, ctx.harnessMonitor.setGuardArmed(request.payload.armed)))
+      },
+      async killNow(request) {
+        return ok(request, { killed: await ctx.harnessMonitor.killNow() })
+      },
+      exportJson(request) {
+        return Promise.resolve(ok(request, ctx.harnessMonitor.exportJson()))
+      },
+      exportCsv(request) {
+        return Promise.resolve(ok(request, { csv: ctx.harnessMonitor.exportCsv() }))
       },
     },
 

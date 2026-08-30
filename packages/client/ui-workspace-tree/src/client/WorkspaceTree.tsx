@@ -2,9 +2,10 @@
  * Workspace file-tree panel body: a read-only, lazily-expanding view of the
  * active workspace's files and folders. Each folder fetches its own children
  * on first expand (never eagerly, so a deep or wide workspace costs nothing
- * until the user opens into it) and keeps them cached in local state for the
- * component's lifetime — a session/workspace switch remounts the whole tree
- * (WorkspaceTree.key in the owner), which is the intended cache boundary.
+ * until the user opens into it) and keeps them cached in local state, keyed
+ * by the path it was fetched for — so switching sessions (which changes
+ * `rootPath` on the same long-lived occupant, no remount) still refetches
+ * the root level instead of showing the previous workspace's stale tree.
  * Read-only in this pass: expand/collapse is the only interaction; clicking a
  * file is inert (no content preview/open-in-editor yet).
  */
@@ -18,12 +19,12 @@ import type { Translate } from '@deepseek-ai/dsh-client-locale/client'
 import type { WorkspaceTreeKey } from './locales.ts'
 import css from './WorkspaceTree.module.css'
 
-/** One directory level's fetch state. */
+/** One directory level's fetch state, tagged with the path it was (or is being) fetched for. */
 type LevelState =
   | { status: 'idle' }
-  | { status: 'loading' }
-  | { status: 'ready'; entries: readonly WorkspaceEntry[] }
-  | { status: 'error'; message: string }
+  | { status: 'loading'; path: string }
+  | { status: 'ready'; path: string; entries: readonly WorkspaceEntry[] }
+  | { status: 'error'; path: string; message: string }
 
 /** Injected face: the wire call, layout actions, and copy the panel drives. */
 export interface WorkspaceTreeInjected {
@@ -69,14 +70,21 @@ function useLevel(
 ): LevelState {
   const [state, setState] = useState<LevelState>({ status: 'idle' })
   useEffect(() => {
-    if (!active || state.status !== 'idle') return
+    if (!active) return
+    // 'loading' always means a fetch for the current (active, path) pair is
+    // already in flight (the effect only re-runs when they change). 'ready'
+    // and 'error' are cached results — but only for the path they were
+    // fetched for, so a session switch (path changes under an already-open
+    // root row) still triggers a fresh fetch instead of showing stale data.
+    if (state.status === 'loading') return
+    if ((state.status === 'ready' || state.status === 'error') && state.path === path) return
     const controller = new AbortController()
-    setState({ status: 'loading' })
+    setState({ status: 'loading', path })
     listWorkspaceEntries(path, controller.signal).then(
-      (listing) => { setState({ status: 'ready', entries: listing.entries }) },
+      (listing) => { setState({ status: 'ready', path, entries: listing.entries }) },
       (error: unknown) => {
         if (controller.signal.aborted) return
-        setState({ status: 'error', message: messageOf(error) })
+        setState({ status: 'error', path, message: messageOf(error) })
       },
     )
     return () => { controller.abort() }

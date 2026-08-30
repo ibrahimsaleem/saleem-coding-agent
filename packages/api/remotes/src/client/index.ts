@@ -46,6 +46,10 @@ export type {
   SessionSummary, SettingsNamespaceView, SettingsPathOpView, SkillEntry, StreamChunk,
   SubagentAddress, SubagentCatalog, JobView, ToolCallView, ToolEventView, ToolResultView,
   WorkspaceId, WorkspaceView,
+  MonitorApi, MonitorSnapshot, MonitorSession, MonitorSecurityFinding, MonitorPermissionEvent,
+  MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
+  MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,
+  MonitorCostByModel, MonitorSessionTimeline, MonitorTimelineEntry, MonitorTokenUsage, MonitorPermissions,
 } from '@deepseek-ai/dsh-client-connection/client'
 export type {} from '@deepseek-ai/dsh-api-gateway/client'
 export type {} from '@deepseek-ai/dsh-cordis-host-runner/remote'

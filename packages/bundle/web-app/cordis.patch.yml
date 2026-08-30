@@ -102,6 +102,12 @@
     - id: plugin-inventory
       name: '@deepseek-ai/dsh-host-plugin-inventory'
 
+    # Read-only observability service (ctx.harnessMonitor): polls ~/.dsh + the
+    # process table into a monitoring snapshot, and owns the reactive kill
+    # switch. The apiproxy monitor.* domain injects and forwards to it.
+    - id: harness-monitor
+      name: '@deepseek-ai/dsh-host-harness-monitor'
+
     # The API gateway: the transport-agnostic dispatch face every client shape
     # shares. The base layer's agent-default-model service owns the default model.
     - id: api-gateway
@@ -248,6 +254,12 @@
     # 'workspaceTree' column.
     - id: ui-workspace-tree
       name: '@deepseek-ai/dsh-client-ui-workspace-tree'
+
+    # Observability panel: a sidebar-foot trigger opening a full-viewport
+    # overlay of stats / sessions / security findings / processes, polling the
+    # host monitor.* RPC.
+    - id: ui-harness-monitor
+      name: '@deepseek-ai/dsh-client-ui-harness-monitor'
 
     # Input triggers: the '/' | '@' pipeline (ui-input-trigger), the command surface over
     # it (ui-commands), and the reference sources (ui-skill / ui-reference).

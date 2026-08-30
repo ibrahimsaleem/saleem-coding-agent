@@ -63,6 +63,10 @@ import {
 } from '../api/credentials.schema.ts'
 import { llmDiscoverModelsValueSchema, llmModelsValueSchema, llmProvidersValueSchema } from '../api/llm.schema.ts'
 import {
+  monitorExportCsvValueSchema, monitorExportJsonValueSchema, monitorKillNowValueSchema,
+  monitorSessionTimelineValueSchema, monitorSetGuardArmedValueSchema, monitorSnapshotValueSchema,
+} from '../api/monitor.schema.ts'
+import {
   subagentHistoryValueSchema,
   subagentInterruptValueSchema,
   subagentListValueSchema,
@@ -163,6 +167,14 @@ export interface IApiClient {
     models(payload: RequestPayload<'llm.models'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'llm.models'>>>
     discoverModels(payload: RequestPayload<'llm.discoverModels'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'llm.discoverModels'>>>
   }
+  monitor: {
+    snapshot(payload: RequestPayload<'monitor.snapshot'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.snapshot'>>>
+    sessionTimeline(payload: RequestPayload<'monitor.sessionTimeline'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.sessionTimeline'>>>
+    setGuardArmed(payload: RequestPayload<'monitor.setGuardArmed'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.setGuardArmed'>>>
+    killNow(payload: RequestPayload<'monitor.killNow'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.killNow'>>>
+    exportJson(payload: RequestPayload<'monitor.exportJson'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.exportJson'>>>
+    exportCsv(payload: RequestPayload<'monitor.exportCsv'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.exportCsv'>>>
+  }
   /** client-response passthrough (rpcId is a backfill of the server-request's id — never minted here). */
   respond(message: ClientResponse, signal?: AbortSignal): Promise<RpcReceipt>
 }
@@ -225,6 +237,12 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
   'llm.providers': llmProvidersValueSchema,
   'llm.models': llmModelsValueSchema,
   'llm.discoverModels': llmDiscoverModelsValueSchema,
+  'monitor.snapshot': monitorSnapshotValueSchema,
+  'monitor.sessionTimeline': monitorSessionTimelineValueSchema,
+  'monitor.setGuardArmed': monitorSetGuardArmedValueSchema,
+  'monitor.killNow': monitorKillNowValueSchema,
+  'monitor.exportJson': monitorExportJsonValueSchema,
+  'monitor.exportCsv': monitorExportCsvValueSchema,
 }
 
 /** Default timeout for bounded unary calls (rpc-compare 2026-07-19: a hung host must not leave callers pending forever). */
@@ -502,6 +520,15 @@ export abstract class AbstractApiClient implements IApiClient {
     providers: (payload, signal) => this.callUnary('llm.providers', payload, signal),
     models: (payload, signal) => this.callUnary('llm.models', payload, signal),
     discoverModels: (payload, signal) => this.callUnary('llm.discoverModels', payload, signal),
+  }
+
+  readonly monitor: IApiClient['monitor'] = {
+    snapshot: (payload, signal) => this.callUnary('monitor.snapshot', payload, signal),
+    sessionTimeline: (payload, signal) => this.callUnary('monitor.sessionTimeline', payload, signal),
+    setGuardArmed: (payload, signal) => this.callUnary('monitor.setGuardArmed', payload, signal),
+    killNow: (payload, signal) => this.callUnary('monitor.killNow', payload, signal),
+    exportJson: (payload, signal) => this.callUnary('monitor.exportJson', payload, signal),
+    exportCsv: (payload, signal) => this.callUnary('monitor.exportCsv', payload, signal),
   }
 
   readonly events: IApiClient['events'] = {

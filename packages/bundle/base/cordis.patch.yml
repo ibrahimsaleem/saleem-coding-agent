@@ -63,8 +63,8 @@
     - id: agent-default-model
       name: '@deepseek-ai/dsh-agent-default-model'
       config:
-        provider: deepseek-official
-        model: deepseek-v4-flash
+        provider: google
+        model: gemini-3.5-flash-lite
 
     - id: jobs
       name: '@deepseek-ai/dsh-jobs-local'

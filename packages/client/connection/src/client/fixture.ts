@@ -32,7 +32,7 @@ import type { CommandId } from '@deepseek-ai/dsh-commands/brand'
 import type { CommandDescriptor, CommandExecution, CommandResult } from '@deepseek-ai/dsh-commands/types'
 import { deriveEventMessage, foldSurface } from '@deepseek-ai/dsh-session/surface'
 import type {
-  ApiProxy, ClientRequest, ClientResponse, HistoryEntry, HostFrame, MuxFrame, RpcReceipt,
+  ApiProxy, ClientRequest, ClientResponse, HistoryEntry, HostFrame, MonitorSnapshot, MuxFrame, RpcReceipt,
   ModelProviderGroup, ModelSelection, RpcRequest, RpcResponse, RpcResult, ServerRequest, ServerResponse, SessionSummary,
   ToolCallView, ToolEventView, ToolResultView, WorkspaceId, WorkspaceView,
 } from './api.ts'
@@ -1672,6 +1672,24 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
     return Promise.resolve({ rpcId: request.rpcId, result: { ok: false, error } })
   }
 
+  /** An empty but well-formed monitor snapshot (fixture mode has no ~/.dsh to read). */
+  function fixtureMonitorSnapshot(): MonitorSnapshot {
+    return {
+      generatedAt: Date.now(),
+      homeLabel: '~/.dsh',
+      summary: {
+        sessionCount: 0, runningSessions: 0, processCount: 0, totalTurns: 0, totalPrompts: 0,
+        totalToolCalls: 0, totalRetries: 0, totalErrors: 0, modelsConnected: 0,
+        securityFindingsCount: 0, riskyPermissionSessions: 0,
+        tokens: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0, total: 0 },
+        estimatedCostUsd: 0, hasUnknownCost: false,
+      },
+      models: [], toolCallCounts: {}, sessions: [], processes: [], securityFindings: [],
+      permissionEvents: [], activityTimeline: [], history: [],
+      guard: { armed: false, armedAt: null, events: [] },
+    }
+  }
+
   const summaryOf = (id: SessionId): SessionSummary | undefined => sessions.find(s => s.sessionId === id)
   /** Shared session guard for sessionId-addressed catalog routes: the error
    *  response when the session is unknown, undefined when it exists. */
@@ -3101,6 +3119,20 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       })
       return Promise.resolve({ accepted: true })
     },
+    // Read-only observability surface: fixture mode has no `~/.dsh` to scan,
+    // so every call answers with an empty-but-well-formed shape.
+    monitor: {
+      snapshot: request => ok(request, fixtureMonitorSnapshot()),
+      sessionTimeline: request => ok(request, {
+        sessionId: request.payload.sessionId, cwd: null, timeline: [], hasMore: false, oldestSeq: null,
+      }),
+      setGuardArmed: request => ok(request, {
+        armed: request.payload.armed, armedAt: request.payload.armed ? Date.now() : null, events: [],
+      }),
+      killNow: request => ok(request, { killed: [] }),
+      exportJson: request => ok(request, fixtureMonitorSnapshot()),
+      exportCsv: request => ok(request, { csv: '' }),
+    },
     // Satisfies the ApiProxy contract type only: the browser export button
     // hands GET /api/session.export to the native download manager, so this
     // stub is never reached through the fixture's dispatch.
@@ -3248,6 +3280,12 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'llm.providers': return this.api.llm.providers(request)
       case 'llm.models': return this.api.llm.models(request)
       case 'llm.discoverModels': return this.api.llm.discoverModels(request, signal)
+      case 'monitor.snapshot': return this.api.monitor.snapshot(request)
+      case 'monitor.sessionTimeline': return this.api.monitor.sessionTimeline(request)
+      case 'monitor.setGuardArmed': return this.api.monitor.setGuardArmed(request)
+      case 'monitor.killNow': return this.api.monitor.killNow(request)
+      case 'monitor.exportJson': return this.api.monitor.exportJson(request)
+      case 'monitor.exportCsv': return this.api.monitor.exportCsv(request)
     }
   }
 

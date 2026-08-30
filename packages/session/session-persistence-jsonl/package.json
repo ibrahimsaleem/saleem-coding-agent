@@ -22,12 +22,17 @@
       "types": "./lib/types/invariant.d.ts",
       "default": "./lib/invariant.js"
     },
+    "./log-format": {
+      "types": "./lib/types/log-format.d.ts",
+      "default": "./lib/log-format.js"
+    },
     "./src/*": "./src/*",
     "./package.json": "./package.json"
   },
   "files": [
     "lib/index.js",
     "lib/invariant.js",
+    "lib/log-format.js",
     "lib/types/**/*.d.ts"
   ],
   "license": "MIT",

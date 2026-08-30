@@ -65,6 +65,10 @@ import {
 } from '../api/credentials.schema.ts'
 import { llmDiscoverModelsRequestSchema, llmModelsRequestSchema, llmProvidersRequestSchema } from '../api/llm.schema.ts'
 import {
+  monitorExportCsvRequestSchema, monitorExportJsonRequestSchema, monitorKillNowRequestSchema,
+  monitorSessionTimelineRequestSchema, monitorSetGuardArmedRequestSchema, monitorSnapshotRequestSchema,
+} from '../api/monitor.schema.ts'
+import {
   subagentHistoryRequestSchema,
   subagentInterruptRequestSchema,
   subagentListRequestSchema,
@@ -144,6 +148,12 @@ const UNARY_ROUTES: UnaryRoutes = {
   'llm.providers': { schema: llmProvidersRequestSchema, invoke: (api, r) => api.llm.providers(r) },
   'llm.models': { schema: llmModelsRequestSchema, invoke: (api, r) => api.llm.models(r) },
   'llm.discoverModels': { schema: llmDiscoverModelsRequestSchema, invoke: (api, r, signal) => api.llm.discoverModels(r, signal) },
+  'monitor.snapshot': { schema: monitorSnapshotRequestSchema, invoke: (api, r) => api.monitor.snapshot(r) },
+  'monitor.sessionTimeline': { schema: monitorSessionTimelineRequestSchema, invoke: (api, r) => api.monitor.sessionTimeline(r) },
+  'monitor.setGuardArmed': { schema: monitorSetGuardArmedRequestSchema, invoke: (api, r) => api.monitor.setGuardArmed(r) },
+  'monitor.killNow': { schema: monitorKillNowRequestSchema, invoke: (api, r) => api.monitor.killNow(r) },
+  'monitor.exportJson': { schema: monitorExportJsonRequestSchema, invoke: (api, r) => api.monitor.exportJson(r) },
+  'monitor.exportCsv': { schema: monitorExportCsvRequestSchema, invoke: (api, r) => api.monitor.exportCsv(r) },
 }
 
 /** Route lookup that narrows an arbitrary path segment to a map key (single cast point for the string→key refinement). */

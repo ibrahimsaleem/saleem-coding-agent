@@ -60,6 +60,9 @@
       "path": "../../session/session-projection-cache"
     },
     {
+      "path": "../harness-monitor"
+    },
+    {
       "path": "../../session-query/session-query"
     },
     {
