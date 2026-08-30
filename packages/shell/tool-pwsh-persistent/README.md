@@ -1,7 +1,5 @@
 # @deepseek-ai/dsh-tool-pwsh-persistent
 
-English | [中文](README.zh.md)
-
 Model-facing `pwsh(command)` backed by one owner-scoped `ctx.terminals` shell. The package owns the tool contract and shell reuse; deployments select the terminal backend (a `terminal-bash` instance configured with `shellDialect: pwsh`) and sandbox policy. It is the Windows counterpart of `tool-bash-persistent`: same persistent-state contract, PowerShell dialect.
 
 ## Config

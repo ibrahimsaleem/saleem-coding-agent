@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-08-19-knip-config-cleanup.zh.md)
-
 ## Problem
 
 `knip.json` carried workspace entries that did no work. Some pointed at packages that no longer exist, and some duplicated the `packages/*/*` glob default exactly. Both kinds made the file larger — 790 lines — and signaled a config that had outgrown the packages it described, so a reader could not tell which entries protected real behavior and which were inert.

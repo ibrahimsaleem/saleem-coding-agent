@@ -4,15 +4,13 @@
  * declaration; `public-api` entries preserve a class's body-stripped public
  * declaration. Blocks and entries have a one-to-one relationship; comparison
  * ignores whitespace and non-JSDoc comments but preserves declaration
- * structure and every original JSDoc comment. Byte-identical `.zh.md` blocks
- * reuse the manifest-backed check of their unsuffixed sibling.
+ * structure and every original JSDoc comment.
  */
 
 import { globSync, readFileSync, existsSync } from 'node:fs'
 import { resolve, sep } from 'node:path'
 import ts from 'typescript'
 import { markdownFences } from './markdown.ts'
-import { partitionPairedMarkdownDerivatives } from './paired-markdown-derivatives.ts'
 import { isArchivedAgentNotePath } from './repo-files.ts'
 
 const root = resolve(import.meta.dirname, '..')
@@ -215,12 +213,8 @@ for (const pattern of MARKDOWN_GLOBS) {
     if (!isArchivedAgentNotePath(normalized)) docSet.add(normalized)
   }
 }
-const extractedBlocks: EquivBlock[] = [...docSet].sort().flatMap(extractEquivBlocks)
-const { primary: blocks, derivatives } = partitionPairedMarkdownDerivatives(
-  extractedBlocks,
-  block => block.doc,
-  block => `${block.projection ?? 'declaration'}\0${block.code}`,
-)
+const blocks: EquivBlock[] = [...docSet].sort().flatMap(extractEquivBlocks)
+const derivatives: EquivBlock[] = []
 
 const errors: string[] = []
 // A manifest entry naming a doc that does not exist (or is outside the scanned

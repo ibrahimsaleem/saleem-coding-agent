@@ -1,8 +1,7 @@
 /**
  * Typecheck Markdown `ts` fences against the workspace API. `ignore-check` fences are reported as
  * opt-outs; generated catalog fragments and source-equivalence blocks are skipped here because their
- * owning gates verify them. Byte-identical `.zh.md` copies reuse their unsuffixed sibling's check. A
- * build-coordinated mode consumes existing declarations without emit.
+ * owning gates verify them. A build-coordinated mode consumes existing declarations without emit.
  */
 
 import { execFileSync } from 'node:child_process'
@@ -11,7 +10,6 @@ import { join, relative, resolve } from 'node:path'
 import ts from 'typescript'
 import { builtDeclarationPath } from './doc-typecheck-paths.ts'
 import { markdownFences } from './markdown.ts'
-import { partitionPairedMarkdownDerivatives } from './paired-markdown-derivatives.ts'
 import { isArchivedAgentNotePath } from './repo-files.ts'
 
 const root = resolve(import.meta.dirname, '..')
@@ -212,12 +210,8 @@ for (const pattern of markdownGlobs) {
 }
 files.sort()
 
-const extracted = files.flatMap(extractBlocks)
-const { primary: all, derivatives } = partitionPairedMarkdownDerivatives(
-  extracted,
-  block => block.file,
-  block => `${block.kind}\0${block.code}`,
-)
+const all = files.flatMap(extractBlocks)
+const derivatives: typeof all = []
 const checked = all.filter(b => b.kind === 'check')
 const ignored = all.filter(b => b.kind === 'ignore')
 // Only compile-eligible fences belong in the opt-out ratio; every other skipped

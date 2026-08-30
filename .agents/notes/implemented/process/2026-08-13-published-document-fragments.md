@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-08-13-published-document-fragments.zh.md)
-
 ## Problem
 
 `verify-md-links` validates fragments with GitHub's Markdown heading ids, while the documentation website renders headings with VitePress. Punctuation-heavy headings and translated headings can therefore pass source validation but produce links to ids absent from the published HTML. A successful VitePress build validates target pages, not fragment ids.
@@ -12,9 +10,7 @@ English | [中文](2026-08-13-published-document-fragments.zh.md)
 
 `docs:build` and its MPA variant run `verify-doc-site-fragments` after VitePress emits `website/.dist`. The verifier parses every emitted HTML page, resolves each internal fragment link against VitePress clean URLs, and fails when the output is absent, routes are ambiguous, an href is malformed, or either the target page or requested id is missing. Unit tests cover those failures plus clean URLs, `.html` aliases, same-page links, encoded and literal ids, and external-link exclusion.
 
-Any fragment target heading whose GitHub id differs from its VitePress id carries an explicit GitHub-compatible alias. Authored English and translated pages place the alias before the heading; translated pages use the English id shared by the bilingual pair. Generated config, tool, and persistence catalogs emit the alias from their owning generator. Source Markdown validation remains independent and continues to reject links that do not resolve under repository rendering.
-
-The file path follows the source document's locale when a paired target exists, as defined by the [localized bilingual links decision](2026-08-18-localized-bilingual-links.md); the query and fragment suffix remain identical across the pair.
+Any fragment target heading whose GitHub id differs from its VitePress id carries an explicit GitHub-compatible alias. Authored pages place the alias before the heading. Generated config, tool, and persistence catalogs emit the alias from their owning generator. Source Markdown validation remains independent and continues to reject links that do not resolve under repository rendering.
 
 ## Alternatives considered
 

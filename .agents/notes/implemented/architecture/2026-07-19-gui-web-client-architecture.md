@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-07-19-gui-web-client-architecture.zh.md)
-
 > Division of labor: the channel-independent layering model and RPC protocol (message model / type system / contract face / client base class) are in the [layering and RPC protocol note](2026-07-19-gui-layering-and-rpc-protocol.md); this document = the browser side: how the client cordis tree loads, how UI plugins compose through slots and services, and how the React-free object layer feeds React through immutable snapshots.
 
 ## Problem

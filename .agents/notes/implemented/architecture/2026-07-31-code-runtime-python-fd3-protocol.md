@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-07-31-code-runtime-python-fd3-protocol.zh.md)
-
 ## Problem
 
 The CPython code-runtime backend (`@deepseek-ai/dsh-code-runtime-python`, arriving across a PR stack) runs each model program in a fresh `python3 -I` subprocess and bridges binding calls and completion values over the child's fd 3. That channel needs a wire protocol both sides agree on, and the host cannot trust it: model code has full access to fd 3 and can forge any frame, so every inbound frame is hostile input the host must validate and rebuild before reading. The protocol also has to carry lossless JSON without the depth limit `JSON.stringify`/`json.dumps` impose, because the seam's `CodeJsonValue` is depth-unbounded.

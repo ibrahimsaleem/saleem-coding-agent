@@ -1,7 +1,5 @@
 # @deepseek-ai/dsh-subagent-codex
 
-English | [中文](README.zh.md)
-
 This package registers a Profile-named Codex subagent provider whose default name is `codex`. Each accepted run starts the official package-local Codex wrapper with `app-server --stdio` in the delegating Session's workspace, creates one ephemeral Codex thread, submits one self-contained text task, and returns either the selected final answer or a separate safe failure diagnostic through the shared [`dsh-subagent`](../subagent/README.md) result contract.
 
 ## Start and ownership

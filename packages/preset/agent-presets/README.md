@@ -1,7 +1,5 @@
 # dsh-agent-presets
 
-English | [中文](README.zh.md)
-
 Per-preset agent composition. A **preset** is a directory holding one `agent.cordis.yml`; the roster mounts it ONCE per process under a standing scope, and each session that names it joins by having its agent scope key parented to the mount's (`dsh-scope`'s parent chain). The mount's tools, prompt sections, and projection units exist exactly once and cover every joined agent — its plugins key their state by Session/Agent, so sessions stay apart inside one shared instance — and a host reader with no agent at all (a cold transcript read) resolves the same standing registrations by preset id.
 
 The mechanism is two seams. Entry contexts chain to the context a subtree was plugged into, and both [`dsh-tools`](../../core/tools/README.md) and [`dsh-system-prompt`](../../core/system-prompt/README.md) file registrations into the calling context's scope layer — so the standing mount's contributions land in the PRESET's layer. What carries them to each session is `dsh-scope`'s parent chain: an agent's views resolve `agent → preset → global` (nearest shadowing farthest), and the mount's listeners are admitted for every agent parented under it while a sibling preset's stay deaf.

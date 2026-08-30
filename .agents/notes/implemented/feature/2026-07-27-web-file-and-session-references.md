@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-07-27-web-file-and-session-references.zh.md)
-
 ## Problem
 
 The Web composer had a reusable slash/reference trigger pipeline, but its `@` source was inert subagent-label text. Web needed Host-backed workspace-path discovery and structured cross-session snapshots without scanning the Host filesystem in the browser or binding session identity to a display label.

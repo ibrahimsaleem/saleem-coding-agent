@@ -521,24 +521,6 @@ describe('Documentation site publication', () => {
   })
 })
 
-describe('Git hooks', () => {
-  it('leaves frozen Agent Note sidecars to the archive verifier', () => {
-    const lefthook = loadWorkflow('lefthook.yml')
-
-    for (const hookName of ['pre-commit', 'pre-merge-commit']) {
-      const hook = lefthook[hookName]
-      if (!isRecord(hook) || !Array.isArray(hook.jobs)) {
-        throw new TypeError(`lefthook must define ${hookName} jobs`)
-      }
-      const pairing: unknown = hook.jobs.find(
-        (job: unknown) => isRecord(job) && job.name === 'translation pairing (staged records)',
-      )
-
-      expect(pairing).toMatchObject({ exclude: ['.agents/notes/archived/**'] })
-    }
-  })
-})
-
 function loadWorkflow(path: string): Record<string, unknown> {
   const workflow: unknown = yaml.load(readFileSync(resolve(root, path), 'utf8'))
   if (!isRecord(workflow)) throw new TypeError(`${path} must define a workflow`)

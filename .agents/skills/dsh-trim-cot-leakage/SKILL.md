@@ -20,7 +20,7 @@ For every suspect passage ask: **could a reader at HEAD, with no access to any s
 5. **Reviewer-addressed justification** — "the cast is safe — it simply…", "this is correct because…". A comment arguing its own correctness addresses a reviewer, not a maintainer. State the invariant that makes the code safe, or delete the comment if the code shows it.
 6. **Restatement and derivation transcripts** — control-flow narration ("first we X, then we Y"), test walkthroughs, proofs of obvious branches. Delete; keep only a non-obvious contract or invariant.
 7. **Hedges and planning residue** — "probably fine for now", "should be enough", deferrals with no marker. Promote to `TODO`/`FIXME` or restate as the actual bound; delete the hedge.
-8. **Authoring-language slips** — untranslated working-language fragments (端, 设计稿, `---- 私有 ----` separators) in prose whose language is otherwise English, or the reverse in a zh counterpart. Translate or delete.
+8. **Authoring-language slips** — untranslated working-language fragments (端, 设计稿, `---- 私有 ----` separators) in prose whose language is otherwise English. Translate or delete.
 
 ## What is not leakage
 
@@ -40,6 +40,6 @@ Unaided citation passes fail in both directions by deleting durable references a
 
 1. Scope and exclusions per [dsh-prose-standard](../dsh-prose-standard/SKILL.md): require an explicit scope; never touch `vendor/`, `.agents/notes/archived/`, or recorded fixtures and snapshots — recorded model output and sealed history keep their original voice.
 2. Audit read-only first: run the [recall batteries](references/recall-batteries.md) (with `--hidden` so `.agents/` is searched), then judge every hit semantically. The batteries are probes, not the definition — each review round of the original purge found cases the batteries missed, so also read the densest prose in scope (module JSDoc, READMEs, Agent Notes) without a pattern in hand.
-3. Fix owner-first per surface: generated catalogs → fix the source JSDoc or generator template, then regenerate; type-equivalence fences → fix the source JSDoc, then re-paste both bilingual pages (`verify-type-equiv` pins them); bilingual pairs → update the counterpart and re-record per [dsh-translate-docs](../dsh-translate-docs/SKILL.md); model-visible strings → wording is behavior, so flag for a snapshot-backed change instead of silently rewording.
+3. Fix owner-first per surface: generated catalogs → fix the source JSDoc or generator template, then regenerate; type-equivalence fences → fix the source JSDoc, then re-paste the page (`verify-type-equiv` pins them); model-visible strings → wording is behavior, so flag for a snapshot-backed change instead of silently rewording.
 4. Before deleting anything, enumerate the passage's propositions (prose-standard) and check the [overcorrection traps](references/examples.md#overcorrection-traps): trims that flip an obligation into an endorsement, promote a hypothetical to a shipped feature, delete a true fact, or drop provenance.
-5. Verify: re-run the batteries expecting only sanctioned keeps, this skill's own directory, and the owning note's quoted evidence; confirm every remaining citation resolves at HEAD; run the gates for touched surfaces (`doc-sync` for docs, `verify-type-equiv`, `verify-translation-pairing`).
+5. Verify: re-run the batteries expecting only sanctioned keeps, this skill's own directory, and the owning note's quoted evidence; confirm every remaining citation resolves at HEAD; run the gates for touched surfaces (`doc-sync` for docs, `verify-type-equiv`).

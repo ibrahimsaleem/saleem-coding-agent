@@ -1,7 +1,5 @@
 # @deepseek-ai/dsh-session-persistence-sqlite
 
-English | [中文](README.zh.md)
-
 An opt-in SQLite `SessionPersistence` provider. It stores eligible `assistant/chunk` runs in packed physical rows, selectively Zstandard-compresses large payloads, and delta-encodes provenance sequences while restoring the exact logical `SessionEvent[]`. No shipped composition selects it; deployments mount this package explicitly and provide its database path.
 
 `locate(meta)` returns `undefined` because every session shares one database. The provider exposes no per-session raw artifact.

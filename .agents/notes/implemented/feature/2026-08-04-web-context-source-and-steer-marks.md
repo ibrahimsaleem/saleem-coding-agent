@@ -2,8 +2,6 @@
 
 Status: implemented
 
-English | [中文](2026-08-04-web-context-source-and-steer-marks.zh.md)
-
 ## Problem
 
 Everything a producer adds to the model-facing conversation reached the Web transcript as one of two anonymous shapes. Every logged non-user `user/message` — the skill catalog, the runtime snapshot, reconciled `AGENTS.md` instructions, a guard notice, a subagent report, a cross-session snapshot — collapsed into one identical `上下文注入` row, so a reader could not tell what had been added without expanding each row and reading raw JSON. Mid-turn steering was worse: it rendered in exactly the bubble a turn-opening prompt uses, leaving the transcript unable to say which message interrupted a running turn.

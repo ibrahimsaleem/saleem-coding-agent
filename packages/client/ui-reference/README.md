@@ -1,7 +1,5 @@
 # `@deepseek-ai/dsh-client-ui-reference`
 
-English | [中文](README.zh.md)
-
 Unified Web `@file` and `@session` source. The browser starts the `fileReferences/list` and `sessionReferenceResolver/candidates` Remote calls together for an unquoted token, deterministically orders files before sessions with locale-registered folder/file/session labels, and renders the rows under non-selectable file and session section headings without a redundant raw `reference` source title. Either failed candidate domain degrades independently. An open `@"…` token searches files only.
 
 File picks preserve the natural text defined by the shared `@path` grammar as their hidden serialized and clipboard form. A file closes completion as an atomic inline reference displayed with a file glyph, business-color filename, and no capsule. A directory remains plain editable path text with a folder glyph and keeps the menu active at its trailing slash so the user can descend another level. Paths containing whitespace use `@"path with spaces"`, and a quote the user opened explicitly remains quoted.

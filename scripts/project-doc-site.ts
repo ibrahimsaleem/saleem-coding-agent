@@ -102,12 +102,6 @@ function sourceMap(pages: DocsPage[]): Map<string, Map<DocsLocale, DocsPage>> {
   return map
 }
 
-function counterpartSource(source: string): string {
-  return source.endsWith('.zh.md')
-    ? source.replace(/\.zh\.md$/, '.md')
-    : source.replace(/\.md$/, '.zh.md')
-}
-
 function resolveRepositoryTarget(sourceAbs: string, rawPath: string, repoRoot: string): { absPath: string; line?: number } {
   const decoded = decodePath(rawPath)
   let absPath = resolve(dirname(sourceAbs), decoded)
@@ -165,11 +159,7 @@ export function rewriteMarkdown(source: string, options: RewriteMarkdownOptions)
     if (path === '') return
     const { absPath, line } = resolveRepositoryTarget(sourceAbs, path, options.repoRoot)
     const targetPath = repoPath(absPath, options.repoRoot)
-    const isLanguageSwitcher = targetPath === counterpartSource(options.sourcePath)
-    const targetLocale: DocsLocale = isLanguageSwitcher
-      ? options.locale === 'root' ? 'en' : 'root'
-      : options.locale
-    const page = published.get(targetPath)?.get(targetLocale)
+    const page = published.get(targetPath)?.get(options.locale)
     const nextUrl = page !== undefined
       ? routeTarget(options.route, page.route, suffix)
       : node.type === 'image' && options.placeImage !== undefined
@@ -541,7 +531,7 @@ export interface LlmsTxtSite {
 
 /** Locale groups llms.txt lists, in the order the site's navigation presents them. */
 const llmsTxtLocales: readonly { heading: string; locale: DocsLocale }[] = [
-  { heading: '简体中文', locale: 'root' },
+  { heading: 'Docs', locale: 'root' },
   { heading: 'English', locale: 'en' },
 ]
 

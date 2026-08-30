@@ -1,7 +1,5 @@
 # @deepseek-ai/dsh-experimental-agent-team
 
-English | [中文](README.zh.md)
-
 Implicit-root Agent Teams domain. `ctx.agentTeams` owns a flat Lead/teammate roster, a durable peer mailbox, and a shared task DAG in the Lead Session log. The [Agent Teams Agent Note](../../../.agents/notes/implemented/feature/2026-08-05-agent-teams.md) owns the coordination and isolation decisions; the [Team subsystem catalog](../../../docs/subsystems/agent-team.md) records the literal durable shapes and service API.
 
 ## Config

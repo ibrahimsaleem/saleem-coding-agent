@@ -7,12 +7,11 @@ description: Use when publishing, updating, moving, or removing DeepSeek Harness
 
 Keep repository Markdown as the only editable content source. Treat the website as a tested projection: [website/docs.ts](../../../website/docs.ts) selects public pages, [scripts/project-doc-site.ts](../../../scripts/project-doc-site.ts) rewrites them into the disposable `website/.generated/` tree, and VitePress builds that tree. The build additionally emits a raw-Markdown twin of every route (page URL minus any trailing slash, plus `.md`; index routes also get a parent-level alias) and a root `llms.txt` index; both derive from the same manifest and projector, so publishing, moving, or removing a page updates them automatically and `docs:build` fails when one is missing.
 
-Repository translations follow the sibling pairing contract: English `foo.md`, Chinese `foo.zh.md`, and `foo.i18n.yaml` live together. Never create `zh-CN/` or other locale directories for website content. The site route trees are independent of that source layout: `foo.zh.md` projects to the root route and `foo.md` projects to the matching `/en/` route.
+Documentation sources are English-only. Never create `zh-CN/` or other locale directories for website content.
 
 ## Read the owning contracts
 
 - Read [docs/AGENTS.md](../../../docs/AGENTS.md) and use [dsh-doc-standards](../dsh-doc-standards/SKILL.md) when deciding where content belongs or changing product documentation prose.
-- For an edited bilingual source, follow the lightweight routine path in [docs/AGENTS.md](../../../docs/AGENTS.md#writing-rules) and the [pairing contract](../../../docs/i18n/README.md); never invoke the extended translation skill automatically.
 - Read the current `DocsPage` type and entries in [website/docs.ts](../../../website/docs.ts) before changing the manifest; do not rely on a remembered field set.
 - Read [website/.vitepress/config.ts](../../../website/.vitepress/config.ts) before adding a new section, sidebar collection, locale, or top-level navigation item.
 
@@ -22,23 +21,23 @@ Repository translations follow the sibling pairing contract: English `foo.md`, C
 - **Publish a new page:** create it in its owning `docs/` tier, then add one manifest entry.
 - **Rename, move, or remove a page:** update the canonical file, manifest entry, and inbound repository links atomically. Remove stale manifest entries; `docs:check` rejects missing sources.
 - **Publish a generated catalog:** map the generated `docs/` file, but change its generator or source metadata rather than editing the catalog by hand.
-- **Change site structure:** update the manifest for ordinary pages; update VitePress configuration only when the existing sidebar, section, or locale model cannot express the change.
+- **Change site structure:** update the manifest for ordinary pages; update VitePress configuration only when the existing sidebar or section model cannot express the change.
 
-Never edit or commit `website/.generated/`, `website/.cache/`, or `website/.dist/`. Except for `website/AGENTS.md`, never add Markdown under `website/`; locale and route directories such as `website/zh-CN/`, `website/en/`, and `website/api/` are invalid source layouts. Keep generated catalogs under `docs/`, freshness-gate them there, and publish them through the manifest.
+Never edit or commit `website/.generated/`, `website/.cache/`, or `website/.dist/`. Except for `website/AGENTS.md`, never add Markdown under `website/`; route directories such as `website/api/` are invalid source layouts. Keep generated catalogs under `docs/`, freshness-gate them there, and publish them through the manifest.
 
 ## Add or update a manifest entry
 
 Set every `DocsPage` field deliberately:
 
-- `source`: repository-relative canonical Markdown path. For a complete bilingual pair, add the English `.md` path through `pairedPages()`; it derives the sibling `.zh.md`, the content locales, and counterpart aliases.
+- `source`: repository-relative canonical Markdown path.
 - `route`: public VitePress path including the `.md` suffix.
 - `label`: sidebar label, not necessarily the document H1.
-- `sidebar`: reuse `zh-guide`, `zh-develop`, or `en-docs` unless the information architecture genuinely needs another collection.
+- `sidebar`: reuse an existing collection unless the information architecture genuinely needs another one.
 - `section`: reuse an existing section when possible. If adding one, also place it in `sectionOrder` in the VitePress config.
 - `order`: stable order within the section.
 - `sourceAliases`: optional additional repository paths that should resolve to this page when links are projected. It does not create another public route.
 
-Use `mirroredPages()` only for a source that intentionally falls back to the same available language in both route trees. Convert that entry to `pairedPages()` when its counterpart is added. Keep the manifest an explicit public allowlist. Do not publish RFCs, postmortems, testing guides, `AGENTS.md`, or maintainer workflows merely because they exist under `docs/`; add internal material only when the user explicitly expands what the site publishes.
+Keep the manifest an explicit public allowlist. Do not publish RFCs, postmortems, testing guides, `AGENTS.md`, or maintainer workflows merely because they exist under `docs/`; add internal material only when the user explicitly expands what the site publishes.
 
 ## Preserve link behavior
 
