@@ -16,6 +16,7 @@ import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
 import type { MonitorApi } from './monitor.ts'
+import type { RouterApi } from './router.ts'
 import type { DownloadsApi } from './downloads.ts'
 import type { ClientResponse, RpcReceipt } from './rpc.ts'
 
@@ -33,6 +34,7 @@ export interface ApiProxy {
   credentials: CredentialsApi
   llm: LlmApi
   monitor: MonitorApi
+  router: RouterApi
   /** Host-only download surfaces (GET, no wire envelope); absent from IApiClient. */
   downloads: DownloadsApi
   /**
@@ -71,6 +73,10 @@ export type {
   MonitorPermissions, MonitorProcess, MonitorSecurityFinding, MonitorSession, MonitorSessionCost,
   MonitorSessionTimeline, MonitorSnapshot, MonitorSummary, MonitorTimelineEntry, MonitorTokenUsage,
 } from './monitor.ts'
+export type {
+  CandidateHealth, CandidateState, PlatformState, RouterApi, RouterMutationResult,
+  RouterStateView, RouterSwitchReason,
+} from './router.ts'
 export type { DownloadsApi } from './downloads.ts'
 export type { ApprovalResponsePayload } from './approvals.ts'
 

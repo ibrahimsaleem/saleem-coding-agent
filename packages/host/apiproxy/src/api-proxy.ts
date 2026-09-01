@@ -67,6 +67,8 @@ import type { JobSnapshot } from '@deepseek-ai/dsh-jobs'
 import type {} from '@deepseek-ai/dsh-session-projection-cache'
 // Type-only: resolves `ctx.harnessMonitor` (the observability service the monitor domain forwards to).
 import type {} from '@deepseek-ai/dsh-host-harness-monitor'
+// Type-only: resolves `ctx.modelRouter` (the free-model router the router domain forwards to).
+import type {} from '@ibrahimsaleem/dsh-llm-free-model-router'
 // GoalError narrows domain rejections to their stable codes at the wire boundary.
 import { GoalError } from '@deepseek-ai/dsh-goal'
 import type { GoalRef as CoreGoalRef } from '@deepseek-ai/dsh-goal'
@@ -3025,6 +3027,34 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
       },
       exportCsv(request) {
         return Promise.resolve(ok(request, { csv: ctx.harnessMonitor.exportCsv() }))
+      },
+    },
+
+    router: {
+      // Thin pass-through to ctx.modelRouter (base bundle). Loopback-only in
+      // practice: activatePlatform writes credentials and llm-pi-ai routes.
+      async state(request) {
+        return ok(request, await ctx.modelRouter.state())
+      },
+      async activatePlatform(request) {
+        const { platformId, keys, endpoint } = request.payload
+        return ok(request, await ctx.modelRouter.activatePlatform(platformId, keys, endpoint))
+      },
+      async deactivatePlatform(request) {
+        const { platformId, forgetKeys } = request.payload
+        return ok(request, await ctx.modelRouter.deactivatePlatform(platformId, forgetKeys ?? false))
+      },
+      async setConfig(request) {
+        const { enabled, poolPolicy, keepLocalFallback } = request.payload
+        return ok(request, await ctx.modelRouter.setConfig({
+          ...enabled === undefined ? {} : { enabled },
+          ...poolPolicy === undefined ? {} : { poolPolicy: poolPolicy as 'balanced' | 'max-quality' | 'max-stability' },
+          ...keepLocalFallback === undefined ? {} : { keepLocalFallback },
+        }))
+      },
+      async testKey(request) {
+        const { platformId, key, endpoint } = request.payload
+        return ok(request, await ctx.modelRouter.testKey(platformId, key, endpoint))
       },
     },
 

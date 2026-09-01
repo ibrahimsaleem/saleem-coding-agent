@@ -69,6 +69,10 @@ import {
   monitorSessionTimelineRequestSchema, monitorSetGuardArmedRequestSchema, monitorSnapshotRequestSchema,
 } from '../api/monitor.schema.ts'
 import {
+  routerActivatePlatformRequestSchema, routerDeactivatePlatformRequestSchema, routerSetConfigRequestSchema,
+  routerStateRequestSchema, routerTestKeyRequestSchema,
+} from '../api/router.schema.ts'
+import {
   subagentHistoryRequestSchema,
   subagentInterruptRequestSchema,
   subagentListRequestSchema,
@@ -154,6 +158,11 @@ const UNARY_ROUTES: UnaryRoutes = {
   'monitor.killNow': { schema: monitorKillNowRequestSchema, invoke: (api, r) => api.monitor.killNow(r) },
   'monitor.exportJson': { schema: monitorExportJsonRequestSchema, invoke: (api, r) => api.monitor.exportJson(r) },
   'monitor.exportCsv': { schema: monitorExportCsvRequestSchema, invoke: (api, r) => api.monitor.exportCsv(r) },
+  'router.state': { schema: routerStateRequestSchema, invoke: (api, r) => api.router.state(r) },
+  'router.activatePlatform': { schema: routerActivatePlatformRequestSchema, invoke: (api, r) => api.router.activatePlatform(r) },
+  'router.deactivatePlatform': { schema: routerDeactivatePlatformRequestSchema, invoke: (api, r) => api.router.deactivatePlatform(r) },
+  'router.setConfig': { schema: routerSetConfigRequestSchema, invoke: (api, r) => api.router.setConfig(r) },
+  'router.testKey': { schema: routerTestKeyRequestSchema, invoke: (api, r) => api.router.testKey(r) },
 }
 
 /** Route lookup that narrows an arbitrary path segment to a map key (single cast point for the string→key refinement). */

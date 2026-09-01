@@ -50,6 +50,7 @@ export type {
   MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
   MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,
   MonitorCostByModel, MonitorSessionTimeline, MonitorTimelineEntry, MonitorTokenUsage, MonitorPermissions,
+  RouterApi, RouterStateView, RouterMutationResult, CandidateHealth, CandidateState, PlatformState, RouterSwitchReason,
 } from '@deepseek-ai/dsh-client-connection/client'
 export type {} from '@deepseek-ai/dsh-api-gateway/client'
 export type {} from '@deepseek-ai/dsh-cordis-host-runner/remote'

@@ -3133,6 +3133,18 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       exportJson: request => ok(request, fixtureMonitorSnapshot()),
       exportCsv: request => ok(request, { csv: '' }),
     },
+    // Free-model router: fixture mode ships no platforms, so the panel renders
+    // an empty catalog and every mutation is a well-formed no-op.
+    router: {
+      state: request => ok(request, {
+        enabled: true, poolPolicy: 'balanced', keepLocalFallback: true,
+        platforms: [], candidates: [], currentPick: null,
+      }),
+      activatePlatform: request => ok(request, { ok: true }),
+      deactivatePlatform: request => ok(request, { ok: true }),
+      setConfig: request => ok(request, { ok: true }),
+      testKey: request => ok(request, { ok: true, models: [] }),
+    },
     // Satisfies the ApiProxy contract type only: the browser export button
     // hands GET /api/session.export to the native download manager, so this
     // stub is never reached through the fixture's dispatch.
@@ -3286,6 +3298,11 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'monitor.killNow': return this.api.monitor.killNow(request)
       case 'monitor.exportJson': return this.api.monitor.exportJson(request)
       case 'monitor.exportCsv': return this.api.monitor.exportCsv(request)
+      case 'router.state': return this.api.router.state(request)
+      case 'router.activatePlatform': return this.api.router.activatePlatform(request)
+      case 'router.deactivatePlatform': return this.api.router.deactivatePlatform(request)
+      case 'router.setConfig': return this.api.router.setConfig(request)
+      case 'router.testKey': return this.api.router.testKey(request)
     }
   }
 

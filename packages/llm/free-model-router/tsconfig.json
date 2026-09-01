@@ -1,0 +1,23 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib/types"
+  },
+  "include": [
+    "src"
+  ],
+  "references": [
+    { "path": "../../util/brand" },
+    { "path": "../../util/home-paths" },
+    { "path": "../../../vendor/cosmokit" },
+    { "path": "../../../vendor/cordis" },
+    { "path": "../../../vendor/schemastery" },
+    { "path": "../llm" },
+    { "path": "../llm-pi-ai" },
+    { "path": "../../core/session" },
+    { "path": "../../core/agent" },
+    { "path": "../../settings/settings" },
+    { "path": "../../credentials/credentials" }
+  ]
+}

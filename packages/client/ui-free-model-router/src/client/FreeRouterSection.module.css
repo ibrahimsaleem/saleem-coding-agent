@@ -1,0 +1,118 @@
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.intro {
+  color: var(--dsw-alias-text-3);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.label {
+  font-weight: 500;
+}
+
+.hint {
+  color: var(--dsw-alias-text-3);
+  font-size: 11px;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.groupTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dsw-alias-text-3);
+}
+
+.card {
+  border: 1px solid var(--dsw-alias-border-1);
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.cardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.keyInput {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--dsw-alias-border-1);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-text-1);
+  font: inherit;
+}
+
+.select {
+  padding: 6px 8px;
+  border: 1px solid var(--dsw-alias-border-1);
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-text-1);
+  font: inherit;
+}
+
+.candidate {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px solid var(--dsw-alias-border-1);
+}
+
+.badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--dsw-alias-state-success-primary) 16%, transparent);
+  color: var(--dsw-alias-state-success-primary);
+}
+
+.badgeCooling {
+  background: color-mix(in srgb, var(--dsw-alias-state-warning-primary) 16%, transparent);
+  color: var(--dsw-alias-state-warning-primary);
+}
+
+.badgeDisabled {
+  background: color-mix(in srgb, var(--dsw-alias-state-error-primary) 16%, transparent);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.error {
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 12px;
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}

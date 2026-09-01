@@ -63,6 +63,9 @@
       "path": "../harness-monitor"
     },
     {
+      "path": "../../llm/free-model-router"
+    },
+    {
       "path": "../../session-query/session-query"
     },
     {

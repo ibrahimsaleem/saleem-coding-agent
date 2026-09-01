@@ -68,7 +68,7 @@ export interface Config {
  */
 export class ApiProxyService extends Service implements ApiProxy {
   static inject = [
-    'agentDefaultModel', 'agents', 'attachments', 'directoryPicker', 'harnessMonitor', 'llm', 'sessions', 'subagents',
+    'agentDefaultModel', 'agents', 'attachments', 'directoryPicker', 'harnessMonitor', 'llm', 'modelRouter', 'sessions', 'subagents',
     'sessionQuery', 'tools', 'userQuestions', 'workspaceRegistry',
   ]
 
@@ -90,6 +90,7 @@ export class ApiProxyService extends Service implements ApiProxy {
   readonly credentials: ApiProxy['credentials']
   readonly llm: ApiProxy['llm']
   readonly monitor: ApiProxy['monitor']
+  readonly router: ApiProxy['router']
   readonly events: ApiProxy['events']
   readonly downloads: ApiProxy['downloads']
   readonly respond: ApiProxy['respond']
@@ -119,6 +120,7 @@ export class ApiProxyService extends Service implements ApiProxy {
     this.credentials = api.credentials
     this.llm = api.llm
     this.monitor = api.monitor
+    this.router = api.router
     this.events = api.events
     this.downloads = api.downloads
     // createApiProxy returns closures (no `this` capture), so the bind is

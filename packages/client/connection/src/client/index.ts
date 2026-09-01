@@ -33,6 +33,7 @@ export type {
   MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
   MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,
   MonitorCostByModel, MonitorSessionTimeline, MonitorTimelineEntry, MonitorTokenUsage, MonitorPermissions,
+  RouterApi, RouterStateView, RouterMutationResult, CandidateHealth, CandidateState, PlatformState, RouterSwitchReason,
 } from './api.ts'
 export {
   RpcId,

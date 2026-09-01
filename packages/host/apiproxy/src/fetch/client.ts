@@ -67,6 +67,10 @@ import {
   monitorSessionTimelineValueSchema, monitorSetGuardArmedValueSchema, monitorSnapshotValueSchema,
 } from '../api/monitor.schema.ts'
 import {
+  routerActivatePlatformValueSchema, routerDeactivatePlatformValueSchema, routerSetConfigValueSchema,
+  routerStateValueSchema, routerTestKeyValueSchema,
+} from '../api/router.schema.ts'
+import {
   subagentHistoryValueSchema,
   subagentInterruptValueSchema,
   subagentListValueSchema,
@@ -175,6 +179,13 @@ export interface IApiClient {
     exportJson(payload: RequestPayload<'monitor.exportJson'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.exportJson'>>>
     exportCsv(payload: RequestPayload<'monitor.exportCsv'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.exportCsv'>>>
   }
+  router: {
+    state(payload: RequestPayload<'router.state'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'router.state'>>>
+    activatePlatform(payload: RequestPayload<'router.activatePlatform'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'router.activatePlatform'>>>
+    deactivatePlatform(payload: RequestPayload<'router.deactivatePlatform'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'router.deactivatePlatform'>>>
+    setConfig(payload: RequestPayload<'router.setConfig'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'router.setConfig'>>>
+    testKey(payload: RequestPayload<'router.testKey'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'router.testKey'>>>
+  }
   /** client-response passthrough (rpcId is a backfill of the server-request's id — never minted here). */
   respond(message: ClientResponse, signal?: AbortSignal): Promise<RpcReceipt>
 }
@@ -243,6 +254,11 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
   'monitor.killNow': monitorKillNowValueSchema,
   'monitor.exportJson': monitorExportJsonValueSchema,
   'monitor.exportCsv': monitorExportCsvValueSchema,
+  'router.state': routerStateValueSchema,
+  'router.activatePlatform': routerActivatePlatformValueSchema,
+  'router.deactivatePlatform': routerDeactivatePlatformValueSchema,
+  'router.setConfig': routerSetConfigValueSchema,
+  'router.testKey': routerTestKeyValueSchema,
 }
 
 /** Default timeout for bounded unary calls (rpc-compare 2026-07-19: a hung host must not leave callers pending forever). */
@@ -529,6 +545,14 @@ export abstract class AbstractApiClient implements IApiClient {
     killNow: (payload, signal) => this.callUnary('monitor.killNow', payload, signal),
     exportJson: (payload, signal) => this.callUnary('monitor.exportJson', payload, signal),
     exportCsv: (payload, signal) => this.callUnary('monitor.exportCsv', payload, signal),
+  }
+
+  readonly router: IApiClient['router'] = {
+    state: (payload, signal) => this.callUnary('router.state', payload, signal),
+    activatePlatform: (payload, signal) => this.callUnary('router.activatePlatform', payload, signal),
+    deactivatePlatform: (payload, signal) => this.callUnary('router.deactivatePlatform', payload, signal),
+    setConfig: (payload, signal) => this.callUnary('router.setConfig', payload, signal),
+    testKey: (payload, signal) => this.callUnary('router.testKey', payload, signal),
   }
 
   readonly events: IApiClient['events'] = {

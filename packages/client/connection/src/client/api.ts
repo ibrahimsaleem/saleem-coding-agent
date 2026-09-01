@@ -22,6 +22,7 @@ export type {
   MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
   MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,
   MonitorCostByModel, MonitorSessionTimeline, MonitorTimelineEntry, MonitorTokenUsage, MonitorPermissions,
+  RouterApi, RouterStateView, RouterMutationResult, CandidateHealth, CandidateState, PlatformState, RouterSwitchReason,
 } from '@deepseek-ai/dsh-host-apiproxy/api'
 export type { ToolCallView, ToolResultView } from '@deepseek-ai/dsh-tools/presentation'
 export type {

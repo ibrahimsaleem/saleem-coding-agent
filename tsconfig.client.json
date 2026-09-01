@@ -73,6 +73,7 @@
     { "path": "./packages/client/ui-workspace" },
     { "path": "./packages/client/ui-workspace-tree" },
     { "path": "./packages/client/ui-harness-monitor" },
+    { "path": "./packages/client/ui-free-model-router" },
     { "path": "./packages/client/ui-input-trigger" },
     { "path": "./packages/client/ui-commands" },
     { "path": "./packages/client/ui-skill" },

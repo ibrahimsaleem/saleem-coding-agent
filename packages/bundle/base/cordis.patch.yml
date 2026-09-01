@@ -95,6 +95,19 @@
     - id: llm-pi-ai
       name: '@deepseek-ai/dsh-llm-pi-ai'
 
+    # Free-tier model routing and rate-limit / quota failover. Inert until a
+    # platform is activated (Settings ▸ Free Model Router, or by hand under
+    # `free-model-router:` + `llm-pi-ai.providers.free-*` in settings.yaml).
+    # When active it auto-picks a free coding model per request and routes the
+    # next attempt to a different key / model / platform as each hits its
+    # per-minute rate limit or daily quota, degrading to local Ollama last.
+    - id: free-model-router
+      name: '@ibrahimsaleem/dsh-llm-free-model-router'
+      config:
+        enabled: true
+        poolPolicy: balanced
+        keepLocalFallback: true
+
     - id: session-persistence-jsonl
       name: '@deepseek-ai/dsh-session-persistence-jsonl'
       config:

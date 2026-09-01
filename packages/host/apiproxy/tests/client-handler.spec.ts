@@ -138,6 +138,13 @@ function scriptedApi(overrides: {
       exportJson: err,
       exportCsv: err,
     },
+    router: {
+      state: err,
+      activatePlatform: err,
+      deactivatePlatform: err,
+      setConfig: err,
+      testKey: err,
+    },
     respond: overrides.respond ?? (() => Promise.resolve({ accepted: false as const, reason: 'not-pending' as const })),
     downloads: { sessionLog: async () => new Response('stub', { status: 404 }) },
   }

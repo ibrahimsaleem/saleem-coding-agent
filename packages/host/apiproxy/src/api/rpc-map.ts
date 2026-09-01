@@ -14,6 +14,7 @@ import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
 import type { MonitorApi } from './monitor.ts'
+import type { RouterApi } from './router.ts'
 import type { SubagentsApi } from './subagents.ts'
 import type { RpcResponse } from './rpc.ts'
 
@@ -82,6 +83,11 @@ export interface RpcMethodMap {
   'monitor.killNow': MonitorApi['killNow']
   'monitor.exportJson': MonitorApi['exportJson']
   'monitor.exportCsv': MonitorApi['exportCsv']
+  'router.state': RouterApi['state']
+  'router.activatePlatform': RouterApi['activatePlatform']
+  'router.deactivatePlatform': RouterApi['deactivatePlatform']
+  'router.setConfig': RouterApi['setConfig']
+  'router.testKey': RouterApi['testKey']
 }
 
 /** Business request payload of method K (reaches through the RpcRequest narrow form to payload). */

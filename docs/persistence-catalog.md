@@ -563,6 +563,30 @@ Source: [`packages/core/session/src/types.ts:313`](../packages/core/session/src/
 
 Source: [`packages/core/session/src/types.ts:308`](../packages/core/session/src/types.ts)
 
+### `router/*`
+
+<a id="routercandidate-disabled--log-only"></a>
+
+#### `router/candidate-disabled` — log-only
+
+```ts persistence-catalog
+/** Durable, non-surface record of the free-model router taking one candidate out of rotation. */
+'router/candidate-disabled': RouterCandidateDisabledEventData
+```
+
+Source: [`packages/llm/free-model-router/src/events.ts:15`](../packages/llm/free-model-router/src/events.ts)
+
+<a id="routerswitch--log-only"></a>
+
+#### `router/switch` — log-only
+
+```ts persistence-catalog
+/** Durable, non-surface record of the free-model router moving one request to a different candidate. */
+'router/switch': RouterSwitchEventData
+```
+
+Source: [`packages/llm/free-model-router/src/events.ts:13`](../packages/llm/free-model-router/src/events.ts)
+
 ### `sandbox/*`
 
 <a id="sandboxmode--log-only"></a>

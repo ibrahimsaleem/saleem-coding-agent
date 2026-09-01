@@ -263,6 +263,16 @@ export class FakeApiClient implements IApiClient {
     exportCsv: payload => this.record('monitor.exportCsv', payload, Promise.resolve(ok({ csv: '' }))),
   }
 
+  readonly router: IApiClient['router'] = {
+    state: payload => this.record('router.state', payload, Promise.resolve(ok({
+      enabled: true, poolPolicy: 'balanced', keepLocalFallback: true, platforms: [], candidates: [], currentPick: null,
+    }))),
+    activatePlatform: payload => this.record('router.activatePlatform', payload, Promise.resolve(ok({ ok: true }))),
+    deactivatePlatform: payload => this.record('router.deactivatePlatform', payload, Promise.resolve(ok({ ok: true }))),
+    setConfig: payload => this.record('router.setConfig', payload, Promise.resolve(ok({ ok: true }))),
+    testKey: payload => this.record('router.testKey', payload, Promise.resolve(ok({ ok: true, models: [] }))),
+  }
+
   /** When true, streams never fire onOpen (misbehaving-carrier material for the handshake timeout guard). */
   suppressStreamOpen = false
 
