@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from 'vitest'
-import { Context } from '@deepseek-ai/cordis'
 import type { LlmFailure } from '@deepseek-ai/dsh-llm'
-import { installFailover } from '../src/failover.ts'
+import { handleRequestError } from '../src/failover.ts'
 import type { Candidate } from '../src/pool.ts'
 import type { Config } from '../src/config.ts'
+import type { FreeModelRouterService } from '../src/service.ts'
 
 const SIGNAL = new AbortController().signal
 
@@ -64,20 +64,18 @@ function fakeService(opts: FakeServiceOptions = {}) {
     disable: (...args: unknown[]) => { calls.disable.push(args) },
     health: { noteFailure: (_k: string, code: string) => { calls.noteFailure.push(code) } },
   }
-  return { svc: svc as unknown as Parameters<typeof installFailover>[1], calls }
+  return { svc: svc as unknown as FreeModelRouterService, calls }
 }
 
 async function dispatch(
-  service: Parameters<typeof installFailover>[1],
+  service: FreeModelRouterService,
   agent: ReturnType<typeof fakeAgent>['agent'],
   failure: LlmFailure,
   next: () => Promise<undefined> = () => Promise.resolve(undefined),
 ): Promise<{ kind: 'retry' } | undefined> {
-  const ctx = new Context()
-  installFailover(ctx, service)
-  return ctx.waterfall(
-    'agent/request-error',
-    { agent, turn: 1, step: 1, provider: 'free-google', failure, retryPolicy: undefined, signal: SIGNAL },
+  return handleRequestError(
+    service,
+    { agent, turn: 1, step: 1, provider: 'free-google', failure, retryPolicy: undefined, signal: SIGNAL } as unknown as Parameters<typeof handleRequestError>[1],
     next,
   ) as Promise<{ kind: 'retry' } | undefined>
 }
