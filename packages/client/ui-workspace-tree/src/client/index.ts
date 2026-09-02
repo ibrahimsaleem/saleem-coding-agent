@@ -42,6 +42,7 @@ function WorkspaceTreeOccupant(
   return createElement(WorkspaceTree, {
     rootPath,
     listWorkspaceEntries: props.listWorkspaceEntries,
+    openPath: props.openPath,
     onOpen: props.onOpen,
     onClose: props.onClose,
     t: props.t,
@@ -71,6 +72,7 @@ export function apply(ctx: ClientContext): void {
 
   const injected = (): WorkspaceTreeInjected => ({
     listWorkspaceEntries: (path, signal) => ctx.workspaces.listWorkspaceEntries(path, signal),
+    openPath: path => ctx.workspaces.openPath(path),
     onOpen: () => { ctx.layout.openTree() },
     onClose: () => { ctx.layout.closeTree() },
     t: ctx.locale.bind(LOCALE_NS),
