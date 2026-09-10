@@ -17,9 +17,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { ReactNode } from 'react'
 import {
-  DisclosureRow, IconChevronUpOutline14, IconCloseFill14, IconFileOutline16, IconFolderClose16,
+  DisclosureRow, IconChevronUpOutline14, IconCloseFill14, IconFolderClose16,
   IconFolderOpen16, IconPanelLeftOutline16, IconRefreshOutline16, IconRightUpOutline14, IconSearchOutline16,
 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { FileTypeIcon } from './file-icon.tsx'
 import type {
   WorkspaceEntry, WorkspaceEntryListing, WorkspaceSearchListing,
 } from '@deepseek-ai/dsh-client-runtime/client'
@@ -239,7 +240,7 @@ function FileRow({ entry, controls }: { entry: WorkspaceEntry; controls: TreeCon
       title={controls.t('openFile', { name: entry.name })}
       onClick={() => { controls.openPath(entry.path) }}
     >
-      <IconFileOutline16 className={css.fileIcon} />
+      <FileTypeIcon name={entry.name} className={css.fileIcon} />
       <span className={css.fileName}>{entry.name}</span>
     </button>
   )
@@ -255,7 +256,7 @@ function SearchResultRow({ entry, controls, rootPath }: { entry: WorkspaceEntry;
       title={entry.kind === 'directory' ? controls.t('openFolder', { name: entry.name }) : controls.t('openFile', { name: entry.name })}
       onClick={() => { controls.openPath(entry.path) }}
     >
-      {entry.kind === 'directory' ? <IconFolderClose16 className={css.fileIcon} /> : <IconFileOutline16 className={css.fileIcon} />}
+      {entry.kind === 'directory' ? <IconFolderClose16 className={css.fileIcon} /> : <FileTypeIcon name={entry.name} className={css.fileIcon} />}
       <span className={css.fileName}>{entry.name}</span>
       {dir !== '' && <span className={css.searchResultDir}>{dir}</span>}
     </button>
