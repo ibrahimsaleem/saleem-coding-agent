@@ -1,7 +1,9 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
-import type { WorkspaceEntry, WorkspaceEntryListing, WorkspaceSearchListing } from '@deepseek-ai/dsh-client-runtime/client'
+import type {
+  GitWorkspaceStatus, WorkspaceEntry, WorkspaceEntryListing, WorkspaceSearchListing,
+} from '@deepseek-ai/dsh-client-runtime/client'
 import { WorkspaceTree, type WorkspaceTreeProps } from '../src/client/WorkspaceTree.tsx'
 
 afterEach(cleanup)
@@ -21,11 +23,14 @@ function entry(name: string, kind: 'file' | 'directory' = 'file', hidden = false
   return { name, path: `/ws/${name}`, kind, hidden }
 }
 
+const noGitStatus = (): Promise<GitWorkspaceStatus> => Promise.resolve({ available: false, changes: [], ignored: [] })
+
 function renderTree(props: Partial<WorkspaceTreeProps> = {}) {
   const full: WorkspaceTreeProps = {
     rootPath: '/ws',
     listWorkspaceEntries: () => new Promise<WorkspaceEntryListing>(() => {}),
     searchWorkspaceEntries: () => new Promise<WorkspaceSearchListing>(() => {}),
+    gitStatus: noGitStatus,
     openPath: vi.fn(() => Promise.resolve()),
     onOpen: vi.fn(),
     onClose: vi.fn(),
@@ -47,7 +52,7 @@ describe('WorkspaceTree', () => {
   it('calls onOpen exactly once on mount', () => {
     const onOpen = vi.fn()
     const { rerender } = renderTree({ onOpen })
-    rerender(<WorkspaceTree rootPath="/ws" listWorkspaceEntries={() => new Promise(() => {})} searchWorkspaceEntries={() => new Promise(() => {})} openPath={vi.fn()} onOpen={onOpen} onClose={vi.fn()} t={t as WorkspaceTreeProps['t']} />)
+    rerender(<WorkspaceTree rootPath="/ws" listWorkspaceEntries={() => new Promise(() => {})} searchWorkspaceEntries={() => new Promise(() => {})} gitStatus={noGitStatus} openPath={vi.fn()} onOpen={onOpen} onClose={vi.fn()} t={t as WorkspaceTreeProps['t']} />)
     expect(onOpen).toHaveBeenCalledOnce()
   })
 
@@ -115,7 +120,7 @@ describe('WorkspaceTree', () => {
     })
     const { rerender } = renderTree({ rootPath: '/ws-a', listWorkspaceEntries })
     expect(await screen.findByText('a.ts')).toBeTruthy()
-    rerender(<WorkspaceTree rootPath="/ws-b" listWorkspaceEntries={listWorkspaceEntries} searchWorkspaceEntries={() => new Promise(() => {})} openPath={vi.fn()} onOpen={vi.fn()} onClose={vi.fn()} t={t as WorkspaceTreeProps['t']} />)
+    rerender(<WorkspaceTree rootPath="/ws-b" listWorkspaceEntries={listWorkspaceEntries} searchWorkspaceEntries={() => new Promise(() => {})} gitStatus={noGitStatus} openPath={vi.fn()} onOpen={vi.fn()} onClose={vi.fn()} t={t as WorkspaceTreeProps['t']} />)
     expect(await screen.findByText('b.ts')).toBeTruthy()
     expect(screen.queryByText('a.ts')).toBeNull()
     expect(listWorkspaceEntries).toHaveBeenCalledTimes(2)
@@ -170,7 +175,8 @@ describe('WorkspaceTree', () => {
     // debounced: no call yet right after the keystroke
     expect(searchWorkspaceEntries).not.toHaveBeenCalled()
     // the flat result surfaces with its workspace-relative parent directory, once the debounce fires
-    expect(await screen.findByText('index.spec.ts', {}, { timeout: 1000 })).toBeTruthy()
+    // (queried by title, not text: the matched "spec" substring renders inside its own <mark>)
+    expect(await screen.findByTitle('openFile index.spec.ts', {}, { timeout: 1000 })).toBeTruthy()
     expect(searchWorkspaceEntries).toHaveBeenCalledWith('/ws', 'spec', expect.any(AbortSignal))
     expect(await screen.findByText('src/deep')).toBeTruthy()
     // the tree itself is hidden while searching
@@ -193,7 +199,8 @@ describe('WorkspaceTree', () => {
       }),
     })
     fireEvent.change(screen.getByPlaceholderText('filter'), { target: { value: 'match' } })
-    fireEvent.click(await screen.findByText('match.ts', {}, { timeout: 1000 }))
+    // queried by title, not text: the matched "match" substring renders inside its own <mark>
+    fireEvent.click(await screen.findByTitle('openFile match.ts', {}, { timeout: 1000 }))
     expect(openPath).toHaveBeenCalledWith('/ws/match.ts')
     expect(await screen.findByText('searchTruncated')).toBeTruthy()
   })
@@ -210,7 +217,8 @@ describe('WorkspaceTree', () => {
     fireEvent.change(screen.getByPlaceholderText('filter'), { target: { value: 'env' } })
     expect(await screen.findByText('noMatch', {}, { timeout: 1000 })).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'toggleHidden' }))
-    expect(await screen.findByText('.env')).toBeTruthy()
+    // queried by title, not text: the matched "env" substring renders inside its own <mark>
+    expect(await screen.findByTitle('openFile .env')).toBeTruthy()
   })
 
   it('reports when a directory level was cut off at the backend bound', async () => {
@@ -245,5 +253,109 @@ describe('WorkspaceTree', () => {
     fireEvent.click(screen.getByRole('button', { name: 'refresh' }))
     expect(await screen.findByText('gen-2')).toBeTruthy()
     expect(screen.queryByText('gen-1')).toBeNull()
+  })
+
+  // ---- git status, copy path, keyboard nav ----
+
+  it("shows a colored status letter for a git-tracked file's change", async () => {
+    renderTree({
+      listWorkspaceEntries: async () => ({ path: '/ws', entries: [entry('a.ts')], truncated: false }),
+      gitStatus: async () => ({ available: true, changes: [{ path: '/ws/a.ts', status: 'modified' }], ignored: [] }),
+    })
+    await screen.findByText('a.ts')
+    expect(await screen.findByTitle('modified')).toBeTruthy()
+  })
+
+  it('dims a gitignored path', async () => {
+    renderTree({
+      listWorkspaceEntries: async () => ({ path: '/ws', entries: [entry('dist', 'directory')], truncated: false }),
+      gitStatus: async () => ({ available: true, changes: [], ignored: ['/ws/dist'] }),
+    })
+    const name = await screen.findByText('dist')
+    await waitFor(() => {
+      expect(name.closest('[data-disclosure-row]')?.className).toContain('dimmed')
+    })
+  })
+
+  it('re-fetches git status on Refresh (so a badge clears once a change is committed)', async () => {
+    let call = 0
+    const gitStatus = vi.fn(async () => {
+      call += 1
+      return call === 1
+        ? { available: true, changes: [{ path: '/ws/a.ts', status: 'modified' as const }], ignored: [] }
+        : { available: true, changes: [], ignored: [] }
+    })
+    renderTree({
+      listWorkspaceEntries: async () => ({ path: '/ws', entries: [entry('a.ts')], truncated: false }),
+      gitStatus,
+    })
+    expect(await screen.findByTitle('modified')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'refresh' }))
+    await waitFor(() => { expect(screen.queryByTitle('modified')).toBeNull() })
+    expect(gitStatus).toHaveBeenCalledTimes(2)
+  })
+
+  it("copies a row's workspace-relative path to the clipboard", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { writeText } })
+    renderTree({
+      listWorkspaceEntries: async () => ({ path: '/ws', entries: [entry('main.py')], truncated: false }),
+    })
+    await screen.findByText('main.py')
+    fireEvent.click(screen.getByRole('button', { name: 'copyPath' }))
+    expect(writeText).toHaveBeenCalledWith('main.py')
+    expect(await screen.findByRole('button', { name: 'copied' })).toBeTruthy()
+  })
+
+  it('bolds the matched substring in a search result', async () => {
+    renderTree({
+      searchWorkspaceEntries: async () => ({
+        path: '/ws',
+        results: [{ name: 'index.spec.ts', path: '/ws/index.spec.ts', kind: 'file', hidden: false }],
+        truncated: false,
+      }),
+    })
+    fireEvent.change(screen.getByPlaceholderText('filter'), { target: { value: 'spec' } })
+    const row = await screen.findByTitle('openFile index.spec.ts', {}, { timeout: 1000 })
+    const mark = row.querySelector('mark')
+    expect(mark?.textContent).toBe('spec')
+  })
+
+  it('moves focus between rows with the arrow keys, and Home/End jump to the ends', async () => {
+    renderTree({
+      listWorkspaceEntries: async () => ({ path: '/ws', entries: [entry('a.ts'), entry('b.ts'), entry('c.ts')], truncated: false }),
+    })
+    const rowA = (await screen.findByText('a.ts')).closest('[data-tree-row]') as HTMLElement
+    const rowB = (await screen.findByText('b.ts')).closest('[data-tree-row]') as HTMLElement
+    const rowC = (await screen.findByText('c.ts')).closest('[data-tree-row]') as HTMLElement
+    rowA.focus()
+    fireEvent.keyDown(rowA, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(rowB)
+    fireEvent.keyDown(rowB, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(rowC)
+    // Down at the last row holds in place rather than wrapping or erroring.
+    fireEvent.keyDown(rowC, { key: 'ArrowDown' })
+    expect(document.activeElement).toBe(rowC)
+    fireEvent.keyDown(rowC, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(rowB)
+    fireEvent.keyDown(rowB, { key: 'End' })
+    expect(document.activeElement).toBe(rowC)
+    fireEvent.keyDown(rowC, { key: 'Home' })
+    expect(document.activeElement).toBe(rowA)
+  })
+
+  it('expands and collapses a focused directory row with ArrowRight/ArrowLeft', async () => {
+    const listWorkspaceEntries = vi.fn((path: string) => {
+      if (path === '/ws') return Promise.resolve<WorkspaceEntryListing>({ path, entries: [entry('src', 'directory')], truncated: false })
+      if (path === '/ws/src') return Promise.resolve<WorkspaceEntryListing>({ path, entries: [entry('index.ts')], truncated: false })
+      throw new Error(path)
+    })
+    renderTree({ listWorkspaceEntries })
+    const row = (await screen.findByText('src')).closest('[data-disclosure-row]') as HTMLElement
+    row.focus()
+    fireEvent.keyDown(row, { key: 'ArrowRight' })
+    expect(await screen.findByText('index.ts')).toBeTruthy()
+    fireEvent.keyDown(row, { key: 'ArrowLeft' })
+    expect(screen.queryByText('index.ts')).toBeNull()
   })
 })

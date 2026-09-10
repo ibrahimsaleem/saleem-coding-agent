@@ -7,7 +7,7 @@
  * widening what features may do to the workspaces domain.
  */
 import type {
-  DirectoryListing, SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceSearchListing, WorkspaceView,
+  DirectoryListing, GitWorkspaceStatus, SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { WorkspaceListState } from '../workspaces/service.ts'
 import type { ObservableSnapshot } from './store.ts'
@@ -67,6 +67,16 @@ export interface IWorkspaces {
    * @returns matches (best match first) and whether the scan was cut off.
    */
   searchWorkspaceEntries(path: string, query: string, signal?: AbortSignal): Promise<WorkspaceSearchListing>
+  /**
+   * Git working-tree summary for an already-open workspace, for the file-tree
+   * panel's status badges and gitignored-path dimming. Resolves to
+   * `available: false` (never rejects) when `path` is not inside a git
+   * working tree.
+   * @param path - fully qualified workspace root.
+   * @param signal - aborts the wire request (and the Host's scan) when the caller supersedes it.
+   * @returns the workspace's git summary.
+   */
+  gitStatus(path: string, signal?: AbortSignal): Promise<GitWorkspaceStatus>
   /**
    * Create one child directory through the Host's `browse` capability.
    * @param path - absolute existing parent directory.

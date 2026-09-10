@@ -64,6 +64,24 @@ export interface WorkspaceSearchListing {
   truncated: boolean
 }
 
+/** One tracked path's working-tree change, for the file-tree's git-status badges. */
+export interface GitPathStatus {
+  /** Absolute host path. */
+  path: string
+  /** `renamed` reports only the destination path (the rename's origin is not tracked here). */
+  status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked' | 'conflicted'
+}
+
+/** host.gitStatus response value: one workspace's git working-tree summary. */
+export interface GitWorkspaceStatus {
+  /** False when `path` is not inside a git working tree (or git itself is unavailable) — never an error, just nothing to show. */
+  available: boolean
+  /** Every changed path under `path`, deepest-first status only (a change inside an also-ignored directory cannot occur). */
+  changes: GitPathStatus[]
+  /** Absolute paths git reports as ignored — typically directory roots (`node_modules`, `dist`, …), not every file beneath them. */
+  ignored: string[]
+}
+
 /** Host-level unary methods. */
 export interface HostApi {
   /**
@@ -139,6 +157,20 @@ export interface HostApi {
     request: RpcRequest<{ path: string; query: string }>,
     signal: AbortSignal,
   ): Promise<RpcResponse<WorkspaceSearchListing>>
+
+  /**
+   * Git working-tree summary for an already-open workspace, for the file-tree
+   * panel's status badges (modified/added/untracked/…) and gitignored-path
+   * dimming. `path` must be fully qualified. Never fails the request: a
+   * missing `git` binary, a workspace outside any git working tree, or any
+   * other scan failure all resolve to `available: false` rather than an RPC
+   * error — the tree simply shows no badges. The carrier's request signal
+   * follows the caller, stopping the spawned process on disconnect or timeout.
+   */
+  gitStatus(
+    request: RpcRequest<{ path: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<GitWorkspaceStatus>>
 
   /**
    * Create one child directory under an existing parent (the browser's

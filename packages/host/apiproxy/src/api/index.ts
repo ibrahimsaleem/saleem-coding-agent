@@ -52,7 +52,8 @@ export type {
   SessionListMetadata, SessionProjectionsBlock, SessionSearchItem, SessionsApi, SessionSummary,
 } from './sessions.ts'
 export type {
-  DirectoryEntry, DirectoryListing, HostApi, WorkspaceEntry, WorkspaceEntryListing, WorkspaceSearchListing,
+  DirectoryEntry, DirectoryListing, GitPathStatus, GitWorkspaceStatus, HostApi, WorkspaceEntry,
+  WorkspaceEntryListing, WorkspaceSearchListing,
 } from './host.ts'
 export type {
   SubagentAddress, SubagentCatalog, SubagentInterruptReceipt, SubagentListEntry,

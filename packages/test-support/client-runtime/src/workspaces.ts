@@ -1,8 +1,8 @@
 /** Test-owned workspaces face: the renderer standard-kit observable plus recorded actions. */
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type {
-  DirectoryListing, IWorkspaces, SessionId, SnapshotStore, WorkspaceEntryListing, WorkspaceId, WorkspaceListState,
-  WorkspaceSearchListing, WorkspaceView,
+  DirectoryListing, GitWorkspaceStatus, IWorkspaces, SessionId, SnapshotStore, WorkspaceEntryListing, WorkspaceId,
+  WorkspaceListState, WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import { workspaceListState } from './fixtures.ts'
 import type { Stabilizer } from './fixtures.ts'
@@ -165,6 +165,20 @@ export class TestWorkspaces implements IWorkspaces {
     const stub = this.stubs.get('searchWorkspaceEntries')
     if (stub !== undefined) return await (stub(path, query, signal) as Promise<WorkspaceSearchListing>)
     return { path, results: [], truncated: false }
+  }
+
+  /**
+   * Git working-tree summary (recorded). The default reports no git working
+   * tree; stub to shape changes/ignored.
+   * @param path - fully qualified workspace root.
+   * @param signal - forwarded like the production face passes it to the wire.
+   * @returns the workspace's git summary.
+   */
+  async gitStatus(path: string, signal?: AbortSignal): Promise<GitWorkspaceStatus> {
+    this.calls.push({ method: 'gitStatus', args: [path, signal] })
+    const stub = this.stubs.get('gitStatus')
+    if (stub !== undefined) return await (stub(path, signal) as Promise<GitWorkspaceStatus>)
+    return { available: false, changes: [], ignored: [] }
   }
 
   /**

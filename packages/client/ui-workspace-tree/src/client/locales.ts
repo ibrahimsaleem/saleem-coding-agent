@@ -19,6 +19,8 @@ export const zh = {
   openFile: '打开 {name}',
   openFolder: '在文件管理器中打开 {name}',
   openFailed: '无法打开（仅本地运行时可用）。',
+  copyPath: '复制相对路径',
+  copied: '已复制！',
 }
 
 /** The `workspace-tree` namespace key union. */
@@ -43,4 +45,6 @@ export const en: { [Key in WorkspaceTreeKey]: string } = {
   openFile: 'Open {name}',
   openFolder: 'Reveal {name} in the file manager',
   openFailed: "Couldn't open — only available on a local run.",
+  copyPath: 'Copy relative path',
+  copied: 'Copied!',
 }

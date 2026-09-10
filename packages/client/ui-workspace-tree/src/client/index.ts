@@ -43,6 +43,7 @@ function WorkspaceTreeOccupant(
     rootPath,
     listWorkspaceEntries: props.listWorkspaceEntries,
     searchWorkspaceEntries: props.searchWorkspaceEntries,
+    gitStatus: props.gitStatus,
     openPath: props.openPath,
     onOpen: props.onOpen,
     onClose: props.onClose,
@@ -74,6 +75,7 @@ export function apply(ctx: ClientContext): void {
   const injected = (): WorkspaceTreeInjected => ({
     listWorkspaceEntries: (path, signal) => ctx.workspaces.listWorkspaceEntries(path, signal),
     searchWorkspaceEntries: (path, query, signal) => ctx.workspaces.searchWorkspaceEntries(path, query, signal),
+    gitStatus: (path, signal) => ctx.workspaces.gitStatus(path, signal),
     openPath: path => ctx.workspaces.openPath(path),
     onOpen: () => { ctx.layout.openTree() },
     onClose: () => { ctx.layout.closeTree() },

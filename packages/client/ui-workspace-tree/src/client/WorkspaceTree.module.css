@@ -161,13 +161,24 @@
   opacity: 0;
 }
 
-[data-disclosure-row]:hover .openButton {
+[data-disclosure-row]:hover .openButton,
+[data-tree-row]:hover .openButton {
   opacity: 1;
 }
 
 .openButton:hover {
   background: var(--dsw-alias-interactive-bg-hover);
   color: var(--dsw-alias-label-primary);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  /* Pushes to the row's far right; a no-op when a flex:1 sibling (e.g.
+     .searchResultDir) already claimed the free space before it. */
+  margin-left: auto;
 }
 
 .fileRow {
@@ -190,6 +201,15 @@
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
+.fileRow:focus-visible {
+  outline: 2px solid var(--dsw-alias-border-focus, var(--dsw-alias-label-tertiary));
+  outline-offset: -2px;
+}
+
+.dimmed {
+  opacity: 0.5;
+}
+
 .fileIcon {
   flex-shrink: 0;
   color: var(--dsw-alias-label-tertiary);
@@ -202,10 +222,24 @@
   font-size: 13px;
 }
 
+.matchHighlight {
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font-weight: 700;
+}
+
+.gitBadge {
+  flex-shrink: 0;
+  width: 14px;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
 .searchResultDir {
   flex: 1 1 auto;
   min-width: 0;
-  margin-left: auto;
   padding-left: 8px;
   overflow: hidden;
   text-overflow: ellipsis;

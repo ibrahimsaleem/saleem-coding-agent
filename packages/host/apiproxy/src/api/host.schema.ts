@@ -3,7 +3,7 @@
  */
 
 import { z } from 'zod'
-import type { DirectoryEntry, WorkspaceEntry } from './host.ts'
+import type { DirectoryEntry, GitPathStatus, WorkspaceEntry } from './host.ts'
 import type { RequestPayload, ResponseValue } from './rpc-map.ts'
 import type { Wire } from './rpc.schema.ts'
 
@@ -82,6 +82,24 @@ export const hostSearchWorkspaceEntriesValueSchema = z.object({
   results: z.array(workspaceEntrySchema),
   truncated: z.boolean(),
 }) satisfies z.ZodType<Wire<ResponseValue<'host.searchWorkspaceEntries'>>>
+
+/** One tracked path's working-tree change. */
+export const gitPathStatusSchema = z.object({
+  path: z.string(),
+  status: z.enum(['modified', 'added', 'deleted', 'renamed', 'untracked', 'conflicted']),
+}) satisfies z.ZodType<Wire<GitPathStatus>>
+
+/** host.gitStatus request payload; path must be fully qualified. */
+export const hostGitStatusRequestSchema = z.object({
+  path: z.string().min(1),
+}) satisfies z.ZodType<Wire<RequestPayload<'host.gitStatus'>>>
+
+/** host.gitStatus response value. */
+export const hostGitStatusValueSchema = z.object({
+  available: z.boolean(),
+  changes: z.array(gitPathStatusSchema),
+  ignored: z.array(z.string()),
+}) satisfies z.ZodType<Wire<ResponseValue<'host.gitStatus'>>>
 
 /** host.createDirectory request payload: name must be one plain path segment. */
 export const hostCreateDirectoryRequestSchema = z.object({

@@ -2,7 +2,7 @@
 
 import type { Context } from '@deepseek-ai/cordis'
 import type {
-  DirectoryListing, IApiClient, RpcError,
+  DirectoryListing, GitWorkspaceStatus, IApiClient, RpcError,
   SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SnapshotStore } from '../contract/store.ts'
@@ -249,6 +249,18 @@ export class WorkspaceRuntime implements IWorkspaces {
    */
   async searchWorkspaceEntries(path: string, query: string, signal?: AbortSignal): Promise<WorkspaceSearchListing> {
     const response = await this.api.host.searchWorkspaceEntries({ path, query }, signal)
+    if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
+    return response.result.value
+  }
+
+  /**
+   * Git working-tree summary for an already-open workspace.
+   * @param path - fully qualified workspace root.
+   * @param signal - aborts the wire request when the caller supersedes it.
+   * @returns the workspace's git summary.
+   */
+  async gitStatus(path: string, signal?: AbortSignal): Promise<GitWorkspaceStatus> {
+    const response = await this.api.host.gitStatus({ path }, signal)
     if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
     return response.result.value
   }

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { existsSync, mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -341,6 +342,64 @@ describe('host.searchWorkspaceEntries', () => {
     abort.abort()
     const response = await api.host.searchWorkspaceEntries(request({ path: root, query: 'x' }), abort.signal)
     expect(response.result).toMatchObject({ ok: false, error: { code: 'cancelled' } })
+  })
+})
+
+/** Initialize a real git repo at `root` with a committed baseline file, for host.gitStatus tests. */
+function initGitRepo(root: string): void {
+  const run = (args: string[]): void => { execFileSync('git', args, { cwd: root, stdio: 'ignore' }) }
+  run(['init', '-q'])
+  run(['config', 'user.email', 'test@example.com'])
+  run(['config', 'user.name', 'Test'])
+  writeFileSync(join(root, 'committed.ts'), 'export const x = 1\n')
+  run(['add', '-A'])
+  run(['commit', '-q', '-m', 'init'])
+}
+
+describe('host.gitStatus', () => {
+  it('reports available: false outside any git working tree', async () => {
+    const { api, root } = await harness()
+    writeFileSync(join(root, 'a.ts'), '')
+    const response = await api.host.gitStatus(request({ path: root }), new AbortController().signal)
+    expect(response.result).toMatchObject({ ok: true, value: { available: false, changes: [], ignored: [] } })
+  })
+
+  it('classifies modified, untracked, and ignored paths as absolute host paths', async () => {
+    const { api, root } = await harness()
+    initGitRepo(root)
+    writeFileSync(join(root, 'committed.ts'), 'export const x = 2\n')
+    writeFileSync(join(root, 'new-file.ts'), 'export const y = 1\n')
+    writeFileSync(join(root, '.gitignore'), 'node_modules/\n')
+    mkdirSync(join(root, 'node_modules', 'some-lib'), { recursive: true })
+    writeFileSync(join(root, 'node_modules', 'some-lib', 'index.js'), '')
+
+    const response = await api.host.gitStatus(request({ path: root }), new AbortController().signal)
+    const value = expectOk(response)
+    expect(value.available).toBe(true)
+    expect(value.changes).toEqual(expect.arrayContaining([
+      { path: join(root, 'committed.ts'), status: 'modified' },
+      { path: join(root, 'new-file.ts'), status: 'untracked' },
+      { path: join(root, '.gitignore'), status: 'untracked' },
+    ]))
+    expect(value.ignored).toEqual([join(root, 'node_modules')])
+    // The ignored directory's own contents are never separately reported —
+    // git collapses a whole-directory ignore to its root.
+    expect(value.changes.some(c => c.path.includes('some-lib'))).toBe(false)
+  })
+
+  it('refuses a path that is not fully qualified', async () => {
+    const { api } = await harness()
+    const response = await api.host.gitStatus(request({ path: 'relative/path' }), new AbortController().signal)
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+  })
+
+  it('resolves available: false rather than throwing on an already-aborted signal', async () => {
+    const { api, root } = await harness()
+    initGitRepo(root)
+    const abort = new AbortController()
+    abort.abort()
+    const response = await api.host.gitStatus(request({ path: root }), abort.signal)
+    expect(response.result).toMatchObject({ ok: true, value: { available: false } })
   })
 })
 

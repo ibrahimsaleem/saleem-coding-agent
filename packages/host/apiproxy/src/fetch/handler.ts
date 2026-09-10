@@ -30,7 +30,7 @@ import {
   sessionUpdateQueueRequestSchema,
 } from '../api/sessions.schema.ts'
 import {
-  hostCreateDirectoryRequestSchema, hostDescribeRequestSchema,
+  hostCreateDirectoryRequestSchema, hostDescribeRequestSchema, hostGitStatusRequestSchema,
   hostListDirectoryRequestSchema, hostListWorkspaceEntriesRequestSchema, hostOpenPathRequestSchema,
   hostPickDirectoryRequestSchema, hostSearchWorkspaceEntriesRequestSchema,
 } from '../api/host.schema.ts'
@@ -122,6 +122,10 @@ const UNARY_ROUTES: UnaryRoutes = {
   'host.searchWorkspaceEntries': {
     schema: hostSearchWorkspaceEntriesRequestSchema,
     invoke: (api, r, signal) => api.host.searchWorkspaceEntries(r, signal),
+  },
+  'host.gitStatus': {
+    schema: hostGitStatusRequestSchema,
+    invoke: (api, r, signal) => api.host.gitStatus(r, signal),
   },
   'host.createDirectory': { schema: hostCreateDirectoryRequestSchema, invoke: (api, r) => api.host.createDirectory(r) },
   'host.openPath': { schema: hostOpenPathRequestSchema, invoke: (api, r, signal) => api.host.openPath(r, signal) },

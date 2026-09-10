@@ -4,7 +4,9 @@
  */
 
 import { randomUUID } from 'node:crypto'
+import { execFile } from 'node:child_process'
 import { mkdir, readdir, stat } from 'node:fs/promises'
+import { promisify } from 'node:util'
 import { homedir } from 'node:os'
 import { dirname, join, posix, win32 } from 'node:path'
 import { z as zod } from 'zod'
@@ -37,7 +39,7 @@ import {
 import type { PresetBearingSession } from '@deepseek-ai/dsh-agent-presets'
 import type {} from '@deepseek-ai/dsh-tools'
 import type {
-  ApiProxy, ConfigurableProviderView, CredentialView, GoalRef, HistoryEntry, HostFrame,
+  ApiProxy, ConfigurableProviderView, CredentialView, GitPathStatus, GitWorkspaceStatus, GoalRef, HistoryEntry, HostFrame,
   ModelCatalogFailure, ModelProviderGroup,
   ModelReasoning, MuxFrame, PromptContentPart, QuestionResponsePayload, SessionListMetadata, SessionProjectionsBlock, SessionSearchItem,
   QueuedInboxItem, SessionSummary, SettingsNamespaceView, SubagentAddress, JobView, ToolEventView,
@@ -711,6 +713,75 @@ async function searchWorkspaceLevel(
   }
   results.sort((a, b) => searchMatchRank(a.name, needle) - searchMatchRank(b.name, needle) || a.name.localeCompare(b.name))
   return { results, truncated }
+}
+
+const execFileAsync = promisify(execFile)
+
+/** Map one `git status --porcelain=v1` two-letter (index, worktree) status code to the tree's simplified vocabulary. */
+function classifyGitStatusCode(xy: string): GitPathStatus['status'] {
+  if (xy === '??') return 'untracked'
+  if (xy.includes('U')) return 'conflicted'
+  if (xy.includes('R')) return 'renamed'
+  if (xy.includes('A')) return 'added'
+  if (xy.includes('D')) return 'deleted'
+  return 'modified'
+}
+
+/**
+ * Parse `git status --porcelain=v1` output (newline-delimited; a filename
+ * containing a literal newline — vanishingly rare in practice — would
+ * mis-split there, an accepted tradeoff for this purely-visual indicator)
+ * into per-path changes and ignored roots, both resolved to absolute paths
+ * under `root`. A path outside `root` (git reports the tree above cwd with a
+ * `../`-prefixed path) is dropped — the tree only ever renders rows under `root`.
+ * @param root - the workspace root git was run in (porcelain paths are relative to it).
+ * @param stdout - the raw porcelain output.
+ * @returns changes and ignored roots as absolute paths.
+ */
+function parseGitStatusPorcelain(root: string, stdout: string): { changes: GitPathStatus[]; ignored: string[] } {
+  const changes: GitPathStatus[] = []
+  const ignored: string[] = []
+  for (const line of stdout.split('\n')) {
+    if (line.length < 4) continue
+    const xy = line.slice(0, 2)
+    // A rename/copy line reads "XY orig -> dest"; only the destination path
+    // is worth reporting (the tree has no notion of "this row was renamed
+    // from elsewhere").
+    const arrow = line.indexOf(' -> ', 3)
+    const rawRelative = arrow === -1 ? line.slice(3) : line.slice(arrow + 4)
+    if (rawRelative.startsWith('..')) continue
+    // A directory (an `!!`-ignored root, always) carries a trailing slash;
+    // `join` preserves rather than strips it, so every other WorkspaceEntry
+    // path in this API would be the odd one out if this stayed.
+    const relative = rawRelative.replace(/[/\\]+$/, '')
+    const absolute = join(root, relative)
+    if (xy === '!!') ignored.push(absolute)
+    else changes.push({ path: absolute, status: classifyGitStatusCode(xy) })
+  }
+  return { changes, ignored }
+}
+
+/**
+ * Git working-tree summary for `path` (see {@link GitWorkspaceStatus}).
+ * Never throws: "not a git working tree", a missing `git` binary, an aborted
+ * signal, and any other scan failure all resolve to `available: false`
+ * rather than propagating — the tree simply shows no badges.
+ * @param path - fully qualified workspace root; also `git`'s working directory,
+ * so porcelain paths come back relative to it.
+ * @param signal - aborts the spawned process.
+ * @returns the workspace's git summary.
+ */
+async function gitWorkspaceStatus(path: string, signal: AbortSignal): Promise<GitWorkspaceStatus> {
+  try {
+    const { stdout } = await execFileAsync(
+      'git',
+      ['status', '--porcelain=v1', '--ignored=matching', '--untracked-files=all'],
+      { cwd: path, signal, maxBuffer: 16 * 1024 * 1024 },
+    )
+    return { available: true, ...parseGitStatusPorcelain(path, stdout) }
+  } catch {
+    return { available: false, changes: [], ignored: [] }
+  }
 }
 
 /** Resolved Agent model and project-directory defaults consumed by the API implementation. */
@@ -3086,6 +3157,18 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
             details: { path },
           })
         }
+      },
+
+      async gitStatus(request, signal) {
+        const { path } = request.payload
+        if (!fullyQualifiedHostPath(path)) {
+          return err(request, {
+            code: 'directory-unreadable',
+            message: `cannot read git status for "${path}": not a fully qualified path`,
+            details: { path },
+          })
+        }
+        return ok(request, await gitWorkspaceStatus(path, signal))
       },
 
       async createDirectory(request) {

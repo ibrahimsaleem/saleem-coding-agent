@@ -129,6 +129,13 @@ export class FakeApiClient implements IApiClient {
   }>> =
     () => Promise.resolve(ok({ path: '/f/ws', results: [], truncated: false }))
 
+  onGitStatus: (payload: unknown) => Promise<RpcResponse<{
+    available: boolean
+    changes: { path: string; status: 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked' | 'conflicted' }[]
+    ignored: string[]
+  }>> =
+    () => Promise.resolve(ok({ available: false, changes: [], ignored: [] }))
+
   private readonly muxConns: StreamConn<MuxFrame>[] = []
   private readonly hostConns: StreamConn<HostFrame>[] = []
   lastSearchSignal: AbortSignal | undefined
@@ -181,6 +188,7 @@ export class FakeApiClient implements IApiClient {
       this.record('host.listWorkspaceEntries', payload, this.onListWorkspaceEntries(payload)),
     searchWorkspaceEntries: payload =>
       this.record('host.searchWorkspaceEntries', payload, this.onSearchWorkspaceEntries(payload)),
+    gitStatus: payload => this.record('host.gitStatus', payload, this.onGitStatus(payload)),
     createDirectory: payload => this.record('host.createDirectory', payload, this.onCreateDirectory(payload)),
     openPath: payload => this.record('host.openPath', payload, this.onOpenPath(payload)),
   }

@@ -2637,6 +2637,8 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       describe: request => ok(request, {
         version: '0.0.0-fixture', cwd: '/tmp/fixture', attachedSessions, home: FIXTURE_HOME, canOpenPath: true,
       }),
+      // The fixture tree is not a real git working tree.
+      gitStatus: request => ok(request, { available: false, changes: [], ignored: [] }),
       // Deterministic native pick: the keyless lanes drive the full
       // pick-then-adopt path without an OS chooser (design-mock content,
       // same tree the browse primitives serve).
@@ -3282,6 +3284,7 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'host.listDirectory': return this.api.host.listDirectory(request, new AbortController().signal)
       case 'host.listWorkspaceEntries': return this.api.host.listWorkspaceEntries(request, new AbortController().signal)
       case 'host.searchWorkspaceEntries': return this.api.host.searchWorkspaceEntries(request, new AbortController().signal)
+      case 'host.gitStatus': return this.api.host.gitStatus(request, new AbortController().signal)
       case 'host.createDirectory': return this.api.host.createDirectory(request)
       case 'host.openPath': return this.api.host.openPath(request, new AbortController().signal)
       case 'workspace.list': return this.api.workspace.list(request)

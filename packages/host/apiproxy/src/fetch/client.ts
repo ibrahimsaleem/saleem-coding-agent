@@ -14,7 +14,7 @@ import type { Wire } from '../api/rpc.schema.ts'
 import { rpcReceiptSchema, serverRequestSchema, serverResponseSchema } from '../api/rpc.schema.ts'
 import { hostFrameSchema, muxFrameSchema } from '../api/events.schema.ts'
 import {
-  hostCreateDirectoryValueSchema, hostDescribeValueSchema,
+  hostCreateDirectoryValueSchema, hostDescribeValueSchema, hostGitStatusValueSchema,
   hostListDirectoryValueSchema, hostListWorkspaceEntriesValueSchema,
   hostOpenPathValueSchema, hostPickDirectoryValueSchema, hostSearchWorkspaceEntriesValueSchema,
 } from '../api/host.schema.ts'
@@ -120,6 +120,7 @@ export interface IApiClient {
     listDirectory(payload: RequestPayload<'host.listDirectory'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.listDirectory'>>>
     listWorkspaceEntries(payload: RequestPayload<'host.listWorkspaceEntries'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.listWorkspaceEntries'>>>
     searchWorkspaceEntries(payload: RequestPayload<'host.searchWorkspaceEntries'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.searchWorkspaceEntries'>>>
+    gitStatus(payload: RequestPayload<'host.gitStatus'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.gitStatus'>>>
     createDirectory(payload: RequestPayload<'host.createDirectory'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.createDirectory'>>>
     openPath(payload: RequestPayload<'host.openPath'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'host.openPath'>>>
   }
@@ -217,6 +218,7 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
   'host.listDirectory': hostListDirectoryValueSchema,
   'host.listWorkspaceEntries': hostListWorkspaceEntriesValueSchema,
   'host.searchWorkspaceEntries': hostSearchWorkspaceEntriesValueSchema,
+  'host.gitStatus': hostGitStatusValueSchema,
   'host.createDirectory': hostCreateDirectoryValueSchema,
   'host.openPath': hostOpenPathValueSchema,
   'workspace.list': workspaceListValueSchema,
@@ -480,6 +482,7 @@ export abstract class AbstractApiClient implements IApiClient {
     listDirectory: (payload, signal) => this.callUnary('host.listDirectory', payload, signal),
     listWorkspaceEntries: (payload, signal) => this.callUnary('host.listWorkspaceEntries', payload, signal),
     searchWorkspaceEntries: (payload, signal) => this.callUnary('host.searchWorkspaceEntries', payload, signal),
+    gitStatus: (payload, signal) => this.callUnary('host.gitStatus', payload, signal),
     createDirectory: (payload, signal) => this.callUnary('host.createDirectory', payload, signal),
     openPath: (payload, signal) => this.callUnary('host.openPath', payload, signal),
   }
