@@ -2,7 +2,7 @@
 import { createSnapshotStore } from '@deepseek-ai/dsh-client-runtime/client'
 import type {
   DirectoryListing, IWorkspaces, SessionId, SnapshotStore, WorkspaceEntryListing, WorkspaceId, WorkspaceListState,
-  WorkspaceView,
+  WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-client-runtime/client'
 import { workspaceListState } from './fixtures.ts'
 import type { Stabilizer } from './fixtures.ts'
@@ -150,6 +150,21 @@ export class TestWorkspaces implements IWorkspaces {
     const stub = this.stubs.get('listWorkspaceEntries')
     if (stub !== undefined) return await (stub(path, signal) as Promise<WorkspaceEntryListing>)
     return { path, entries: [], truncated: false }
+  }
+
+  /**
+   * Workspace-tree recursive search (recorded). The default serves no matches;
+   * stub to shape results.
+   * @param path - fully qualified directory to search from.
+   * @param query - substring to match against each entry's name.
+   * @param signal - forwarded like the production face passes it to the wire.
+   * @returns matches and whether the scan was cut off.
+   */
+  async searchWorkspaceEntries(path: string, query: string, signal?: AbortSignal): Promise<WorkspaceSearchListing> {
+    this.calls.push({ method: 'searchWorkspaceEntries', args: [path, query, signal] })
+    const stub = this.stubs.get('searchWorkspaceEntries')
+    if (stub !== undefined) return await (stub(path, query, signal) as Promise<WorkspaceSearchListing>)
+    return { path, results: [], truncated: false }
   }
 
   /**

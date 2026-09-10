@@ -3,7 +3,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type {
   DirectoryListing, IApiClient, RpcError,
-  SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceView,
+  SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SnapshotStore } from '../contract/store.ts'
 import { createSnapshotStore } from '../contract/store.ts'
@@ -235,6 +235,20 @@ export class WorkspaceRuntime implements IWorkspaces {
    */
   async listWorkspaceEntries(path: string, signal?: AbortSignal): Promise<WorkspaceEntryListing> {
     const response = await this.api.host.listWorkspaceEntries({ path }, signal)
+    if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
+    return response.result.value
+  }
+
+  /**
+   * Recursively search an already-open workspace for files and directories
+   * by name, for the file-tree panel's search mode.
+   * @param path - fully qualified directory to search from.
+   * @param query - substring to match against each entry's name, case-insensitive.
+   * @param signal - aborts the wire request when the caller supersedes it.
+   * @returns matches (best match first) and whether the scan was cut off.
+   */
+  async searchWorkspaceEntries(path: string, query: string, signal?: AbortSignal): Promise<WorkspaceSearchListing> {
+    const response = await this.api.host.searchWorkspaceEntries({ path, query }, signal)
     if (!response.result.ok) throw new DirectoryBrowseError(response.result.error)
     return response.result.value
   }

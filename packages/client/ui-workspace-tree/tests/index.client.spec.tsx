@@ -3,7 +3,7 @@ import { Context } from '@deepseek-ai/cordis'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup } from '@testing-library/react'
 import { SlotRegistry } from '@deepseek-ai/dsh-client-runtime/client'
-import type { WorkspaceEntryListing } from '@deepseek-ai/dsh-client-runtime/client'
+import type { WorkspaceEntryListing, WorkspaceSearchListing } from '@deepseek-ai/dsh-client-runtime/client'
 import { LocaleRuntime } from '@deepseek-ai/dsh-client-locale/client'
 import { usePinnedBrowserLanguages } from '@deepseek-ai/dsh-client-test-runtime'
 import { apply, inject } from '../src/client/index.ts'
@@ -21,14 +21,21 @@ const listing: WorkspaceEntryListing = {
   truncated: false,
 }
 
+const searchListing: WorkspaceSearchListing = {
+  path: '/ws',
+  results: [{ name: 'index.ts', path: '/ws/src/index.ts', kind: 'file', hidden: false }],
+  truncated: false,
+}
+
 async function bench() {
   const ctx = new Context()
   await ctx.plugin(SlotRegistry).await()
   ctx.provide('locale', new LocaleRuntime(ctx))
   const listWorkspaceEntries = vi.fn(async (): Promise<WorkspaceEntryListing> => listing)
+  const searchWorkspaceEntries = vi.fn(async (): Promise<WorkspaceSearchListing> => searchListing)
   const openTree = vi.fn()
   const closeTree = vi.fn()
-  ctx.provide('workspaces', { listWorkspaceEntries } as never)
+  ctx.provide('workspaces', { listWorkspaceEntries, searchWorkspaceEntries } as never)
   ctx.provide('layout', { openTree, closeTree } as never)
   const slots = ctx.get('slots') as SlotRegistry
   // The plugin's ctx.slots.inject('workspaceTree', ...) only fires once some
@@ -38,7 +45,7 @@ async function bench() {
     name: 'root',
     children: { workspaceTree: { kind: 'single', scope: 'root' } },
   } as never, () => null)
-  return { ctx, slots, listWorkspaceEntries, openTree, closeTree, declare }
+  return { ctx, slots, listWorkspaceEntries, searchWorkspaceEntries, openTree, closeTree, declare }
 }
 
 describe('ui-workspace-tree client half', () => {
@@ -82,11 +89,14 @@ describe('ui-workspace-tree client half', () => {
     const entry = b.slots.entries('workspaceTree')[0]!
     const injected = (entry.inject as () => {
       listWorkspaceEntries: (path: string) => Promise<WorkspaceEntryListing>
+      searchWorkspaceEntries: (path: string, query: string) => Promise<WorkspaceSearchListing>
       onOpen: () => void
       onClose: () => void
     })()
     await expect(injected.listWorkspaceEntries('/ws')).resolves.toBe(listing)
     expect(b.listWorkspaceEntries).toHaveBeenCalledWith('/ws', undefined)
+    await expect(injected.searchWorkspaceEntries('/ws', 'index')).resolves.toBe(searchListing)
+    expect(b.searchWorkspaceEntries).toHaveBeenCalledWith('/ws', 'index', undefined)
     injected.onOpen()
     expect(b.openTree).toHaveBeenCalledOnce()
     injected.onClose()

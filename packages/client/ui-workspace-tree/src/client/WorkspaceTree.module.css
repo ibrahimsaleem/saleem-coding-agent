@@ -201,3 +201,17 @@
   white-space: nowrap;
   font-size: 13px;
 }
+
+.searchResultDir {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: auto;
+  padding-left: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+  font-size: 11px;
+  color: var(--dsw-alias-label-tertiary);
+}

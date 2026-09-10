@@ -7,7 +7,7 @@
  * widening what features may do to the workspaces domain.
  */
 import type {
-  DirectoryListing, SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceView,
+  DirectoryListing, SessionId, WorkspaceEntryListing, WorkspaceId, WorkspaceSearchListing, WorkspaceView,
 } from '@deepseek-ai/dsh-api-remotes/client'
 import type { WorkspaceListState } from '../workspaces/service.ts'
 import type { ObservableSnapshot } from './store.ts'
@@ -58,6 +58,15 @@ export interface IWorkspaces {
    * @returns the level's files and subdirectories.
    */
   listWorkspaceEntries(path: string, signal?: AbortSignal): Promise<WorkspaceEntryListing>
+  /**
+   * Recursively search an already-open workspace for files and directories
+   * by name, for the file-tree panel's search mode.
+   * @param path - fully qualified directory to search from.
+   * @param query - substring to match against each entry's name, case-insensitive.
+   * @param signal - aborts the wire request (and the Host's scan) when the caller supersedes it.
+   * @returns matches (best match first) and whether the scan was cut off.
+   */
+  searchWorkspaceEntries(path: string, query: string, signal?: AbortSignal): Promise<WorkspaceSearchListing>
   /**
    * Create one child directory through the Host's `browse` capability.
    * @param path - absolute existing parent directory.

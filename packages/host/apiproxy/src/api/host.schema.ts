@@ -70,6 +70,19 @@ export const hostListWorkspaceEntriesValueSchema = z.object({
   truncated: z.boolean(),
 }) satisfies z.ZodType<Wire<ResponseValue<'host.listWorkspaceEntries'>>>
 
+/** host.searchWorkspaceEntries request payload; path must be fully qualified. */
+export const hostSearchWorkspaceEntriesRequestSchema = z.object({
+  path: z.string().min(1),
+  query: z.string(),
+}) satisfies z.ZodType<Wire<RequestPayload<'host.searchWorkspaceEntries'>>>
+
+/** host.searchWorkspaceEntries response value. */
+export const hostSearchWorkspaceEntriesValueSchema = z.object({
+  path: z.string(),
+  results: z.array(workspaceEntrySchema),
+  truncated: z.boolean(),
+}) satisfies z.ZodType<Wire<ResponseValue<'host.searchWorkspaceEntries'>>>
+
 /** host.createDirectory request payload: name must be one plain path segment. */
 export const hostCreateDirectoryRequestSchema = z.object({
   path: z.string(),

@@ -44,6 +44,7 @@ export interface RpcMethodMap {
   'host.pickDirectory': HostApi['pickDirectory']
   'host.listDirectory': HostApi['listDirectory']
   'host.listWorkspaceEntries': HostApi['listWorkspaceEntries']
+  'host.searchWorkspaceEntries': HostApi['searchWorkspaceEntries']
   'host.createDirectory': HostApi['createDirectory']
   'host.openPath': HostApi['openPath']
   'workspace.list': WorkspaceApi['list']

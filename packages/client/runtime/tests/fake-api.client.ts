@@ -156,6 +156,13 @@ export class FakeApiClient implements IApiClient {
   }>> =
     () => Promise.resolve(ok({ path: '/f/ws', entries: [], truncated: false }))
 
+  onSearchWorkspaceEntries: (payload: unknown) => Promise<RpcResponse<{
+    path: string
+    results: { name: string; path: string; kind: 'directory' | 'file'; hidden: boolean }[]
+    truncated: boolean
+  }>> =
+    () => Promise.resolve(ok({ path: '/f/ws', results: [], truncated: false }))
+
   private readonly muxConns: StreamConn<MuxFrame>[] = []
   private readonly hostConns: StreamConn<HostFrame>[] = []
   lastSearchSignal: AbortSignal | undefined
@@ -206,6 +213,8 @@ export class FakeApiClient implements IApiClient {
     listDirectory: (payload: unknown) => this.record('host.listDirectory', payload, this.onListDirectory(payload)),
     listWorkspaceEntries: (payload: unknown) =>
       this.record('host.listWorkspaceEntries', payload, this.onListWorkspaceEntries(payload)),
+    searchWorkspaceEntries: (payload: unknown) =>
+      this.record('host.searchWorkspaceEntries', payload, this.onSearchWorkspaceEntries(payload)),
     createDirectory: (payload: unknown) => this.record('host.createDirectory', payload, this.onCreateDirectory(payload)),
     openPath: (payload: unknown) => this.record('host.openPath', payload, this.onOpenPath(payload)),
   }

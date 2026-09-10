@@ -626,6 +626,93 @@ async function readWorkspaceLevel(path: string): Promise<{ entries: WorkspaceEnt
   return { entries, truncated }
 }
 
+/** Conventional noise directories a recursive workspace search never descends into. */
+const SEARCH_IGNORED_DIRS = new Set([
+  'node_modules', '.git', '.hg', '.svn', 'dist', 'build', '.next', '.nuxt',
+  '.turbo', '.cache', 'coverage', '__pycache__', '.venv', 'venv', '.pytest_cache',
+])
+
+/** Total dirents a workspace search visits before giving up on covering the whole tree. */
+const MAX_SEARCH_SCAN = 20_000
+/** Matches a workspace search returns before giving up on finding more. */
+const MAX_SEARCH_RESULTS = 200
+
+/** 0 = exact name match, 1 = name starts with the query, 2 = name merely contains it. */
+function searchMatchRank(name: string, needle: string): 0 | 1 | 2 {
+  const lower = name.toLowerCase()
+  if (lower === needle) return 0
+  return lower.startsWith(needle) ? 1 : 2
+}
+
+/**
+ * Recursively search one workspace subtree for files/directories whose name
+ * contains `query`. Breadth-first from `path`, skipping `SEARCH_IGNORED_DIRS`
+ * and any subdirectory `readdir` cannot open (a broken permission or symlink
+ * loop there degrades the search, not the whole request) — symlinks are
+ * reported as whichever kind their own dirent carries and, since a
+ * symlinked directory's dirent is never `isDirectory()`, are never descended
+ * into (the same rule `readWorkspaceLevel` documents, which also rules out
+ * symlink cycles for free). Bounded on both entries scanned and results
+ * returned; `signal` is polled between directories so a caller abort stops
+ * the scan instead of outliving it.
+ * @param path - fully qualified directory to search from.
+ * @param query - substring to match against each entry's name, case-insensitive.
+ * @param signal - aborts the in-flight scan.
+ * @returns matches (best match first) and whether either bound was hit.
+ */
+async function searchWorkspaceLevel(
+  path: string,
+  query: string,
+  signal: AbortSignal,
+): Promise<{ results: WorkspaceEntry[]; truncated: boolean }> {
+  const needle = query.trim().toLowerCase()
+  if (needle === '') return { results: [], truncated: false }
+  const results: WorkspaceEntry[] = []
+  const queue: string[] = [path]
+  let scanned = 0
+  let truncated = false
+  // The root is always dequeued first (the queue starts with just it), so this
+  // flips true right after its own readdir succeeds — before any child
+  // directory is dequeued — which is exactly the "root vs. subdirectory" line
+  // the catch below needs.
+  let rootValidated = false
+  while (!truncated) {
+    if (signal.aborted) throw new Error('workspace search aborted')
+    const dir = queue.shift()
+    if (dir === undefined) break
+    let dirents
+    try {
+      dirents = await readdir(dir, { withFileTypes: true })
+    } catch (error) {
+      // The root itself must exist and be readable — that's the caller's own
+      // request, not the scan's problem. A subdirectory hit mid-scan (broken
+      // permission, symlink loop) just degrades the search instead.
+      if (!rootValidated) throw error
+      continue
+    }
+    rootValidated = true
+    for (const dirent of dirents) {
+      if (scanned >= MAX_SEARCH_SCAN) { truncated = true; break }
+      scanned += 1
+      const isDirectory = dirent.isDirectory()
+      if (isDirectory && SEARCH_IGNORED_DIRS.has(dirent.name)) continue
+      const entryPath = join(dir, dirent.name)
+      if (dirent.name.toLowerCase().includes(needle)) {
+        results.push({
+          name: dirent.name,
+          path: entryPath,
+          kind: isDirectory ? 'directory' : 'file',
+          hidden: dirent.name.startsWith('.'),
+        })
+        if (results.length >= MAX_SEARCH_RESULTS) { truncated = true; break }
+      }
+      if (isDirectory) queue.push(entryPath)
+    }
+  }
+  results.sort((a, b) => searchMatchRank(a.name, needle) - searchMatchRank(b.name, needle) || a.name.localeCompare(b.name))
+  return { results, truncated }
+}
+
 /** Resolved Agent model and project-directory defaults consumed by the API implementation. */
 export interface ApiProxyDefaults {
   /**
@@ -2968,6 +3055,34 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
           return err(request, {
             code: 'directory-unreadable',
             message: `cannot list ${path}: ${error instanceof Error ? error.message : String(error)}`,
+            details: { path },
+          })
+        }
+      },
+
+      async searchWorkspaceEntries(request, signal) {
+        const { path, query } = request.payload
+        // Unlike listWorkspaceEntries's single unracable readdir, a multi-directory
+        // scan polls `signal` itself and can reject on an already-aborted signal
+        // without ever touching the filesystem — so there is one check, in the
+        // catch below, rather than a separate up-front guard.
+        if (!fullyQualifiedHostPath(path)) {
+          return err(request, {
+            code: 'directory-unreadable',
+            message: `cannot search "${path}": not a fully qualified path`,
+            details: { path },
+          })
+        }
+        try {
+          const { results, truncated } = await searchWorkspaceLevel(path, query, signal)
+          return ok(request, { path, results, truncated })
+        } catch (error: unknown) {
+          if (signal.aborted) {
+            return err(request, { code: 'cancelled', message: 'workspace search was aborted', details: {} })
+          }
+          return err(request, {
+            code: 'directory-unreadable',
+            message: `cannot search ${path}: ${error instanceof Error ? error.message : String(error)}`,
             details: { path },
           })
         }

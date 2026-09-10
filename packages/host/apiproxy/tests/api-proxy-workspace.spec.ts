@@ -277,6 +277,73 @@ describe('host.listWorkspaceEntries', () => {
   })
 })
 
+describe('host.searchWorkspaceEntries', () => {
+  it('finds matches nested several directories deep, skipping conventional noise directories', async () => {
+    const { api, root } = await harness()
+    mkdirSync(join(root, 'src', 'components'), { recursive: true })
+    writeFileSync(join(root, 'src', 'components', 'UserProfile.tsx'), '')
+    mkdirSync(join(root, 'node_modules', 'some-lib'), { recursive: true })
+    writeFileSync(join(root, 'node_modules', 'some-lib', 'user-profile.js'), '')
+    const response = await api.host.searchWorkspaceEntries(
+      request({ path: root, query: 'profile' }), new AbortController().signal,
+    )
+    expect(response.result).toMatchObject({
+      ok: true,
+      value: {
+        path: root,
+        truncated: false,
+        results: [{ name: 'UserProfile.tsx', kind: 'file', path: join(root, 'src', 'components', 'UserProfile.tsx') }],
+      },
+    })
+  })
+
+  it('matches case-insensitively and ranks exact and prefix matches before mere substrings', async () => {
+    const { api, root } = await harness()
+    writeFileSync(join(root, 'LOG'), '')
+    writeFileSync(join(root, 'logger.ts'), '')
+    writeFileSync(join(root, 'logs.ts'), '')
+    writeFileSync(join(root, 'access-log.ts'), '')
+    const response = await api.host.searchWorkspaceEntries(
+      request({ path: root, query: 'log' }), new AbortController().signal,
+    )
+    const value = expectOk(response)
+    expect(value.results.map(entry => entry.name)).toEqual(['LOG', 'logger.ts', 'logs.ts', 'access-log.ts'])
+  })
+
+  it('returns no results for a blank query without scanning', async () => {
+    const { api, root } = await harness()
+    writeFileSync(join(root, 'anything.ts'), '')
+    const response = await api.host.searchWorkspaceEntries(
+      request({ path: root, query: '   ' }), new AbortController().signal,
+    )
+    expect(response.result).toMatchObject({ ok: true, value: { results: [], truncated: false } })
+  })
+
+  it('refuses a path that is not fully qualified', async () => {
+    const { api } = await harness()
+    const response = await api.host.searchWorkspaceEntries(
+      request({ path: 'relative/path', query: 'x' }), new AbortController().signal,
+    )
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+  })
+
+  it('maps a missing root to directory-unreadable', async () => {
+    const { api, root } = await harness()
+    const response = await api.host.searchWorkspaceEntries(
+      request({ path: join(root, 'nope'), query: 'x' }), new AbortController().signal,
+    )
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'directory-unreadable' } })
+  })
+
+  it('reports an already-aborted request as cancelled without touching the filesystem', async () => {
+    const { api, root } = await harness()
+    const abort = new AbortController()
+    abort.abort()
+    const response = await api.host.searchWorkspaceEntries(request({ path: root, query: 'x' }), abort.signal)
+    expect(response.result).toMatchObject({ ok: false, error: { code: 'cancelled' } })
+  })
+})
+
 describe('host.openPath', () => {
   it('describes whether this deployment can reach a user-visible native desktop', async () => {
     const visible = await harness(undefined, undefined, { canOpenPath: () => true })

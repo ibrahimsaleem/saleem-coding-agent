@@ -32,7 +32,7 @@ import {
 import {
   hostCreateDirectoryRequestSchema, hostDescribeRequestSchema,
   hostListDirectoryRequestSchema, hostListWorkspaceEntriesRequestSchema, hostOpenPathRequestSchema,
-  hostPickDirectoryRequestSchema,
+  hostPickDirectoryRequestSchema, hostSearchWorkspaceEntriesRequestSchema,
 } from '../api/host.schema.ts'
 import {
   workspaceArchiveSessionRequestSchema,
@@ -118,6 +118,10 @@ const UNARY_ROUTES: UnaryRoutes = {
   'host.listWorkspaceEntries': {
     schema: hostListWorkspaceEntriesRequestSchema,
     invoke: (api, r, signal) => api.host.listWorkspaceEntries(r, signal),
+  },
+  'host.searchWorkspaceEntries': {
+    schema: hostSearchWorkspaceEntriesRequestSchema,
+    invoke: (api, r, signal) => api.host.searchWorkspaceEntries(r, signal),
   },
   'host.createDirectory': { schema: hostCreateDirectoryRequestSchema, invoke: (api, r) => api.host.createDirectory(r) },
   'host.openPath': { schema: hostOpenPathRequestSchema, invoke: (api, r, signal) => api.host.openPath(r, signal) },

@@ -54,6 +54,16 @@ export interface WorkspaceEntryListing {
   truncated: boolean
 }
 
+/** host.searchWorkspaceEntries response value: name matches found anywhere under the searched root. */
+export interface WorkspaceSearchListing {
+  /** Absolute path of the root the search started from. */
+  path: string
+  /** Matching files and directories, best match first. */
+  results: WorkspaceEntry[]
+  /** True when the scan hit its entry-count or result-count bound before covering the whole tree. */
+  truncated: boolean
+}
+
 /** Host-level unary methods. */
 export interface HostApi {
   /**
@@ -111,6 +121,24 @@ export interface HostApi {
     request: RpcRequest<{ path: string }>,
     signal: AbortSignal,
   ): Promise<RpcResponse<WorkspaceEntryListing>>
+
+  /**
+   * Recursively search an already-open workspace for files and directories
+   * whose name contains `query` (case-insensitive), for the file-tree panel's
+   * search mode. Descends breadth-first from `path`, skipping conventional
+   * noise directories (`node_modules`, `.git`, build/cache output, …) and
+   * unreadable subdirectories (a broken permission or symlink loop there
+   * degrades the search, not the whole request). Bounded on both the number
+   * of entries scanned and the number of results returned, so a huge
+   * workspace still answers quickly; `truncated` reports whether either
+   * bound was hit. `path` must be fully qualified. The carrier's request
+   * signal follows the caller, stopping the backend's scan on disconnect or
+   * timeout.
+   */
+  searchWorkspaceEntries(
+    request: RpcRequest<{ path: string; query: string }>,
+    signal: AbortSignal,
+  ): Promise<RpcResponse<WorkspaceSearchListing>>
 
   /**
    * Create one child directory under an existing parent (the browser's
