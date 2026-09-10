@@ -434,6 +434,24 @@ function mutableDocument(text: string | undefined): Document {
 }
 
 /**
+ * Ensure `section` resolves to a YAML map before a nested `setIn` descends
+ * into it. `setIn` auto-vivifies a wholly ABSENT key into a map, but a bare
+ * `refs:` (or `records:`) line — written by hand, or by an older version of
+ * this file's own writer — leaves the key present as a null scalar, which
+ * `setIn` refuses to silently replace; the first write into either section
+ * of such a file would otherwise throw "Expected YAML collection at …".
+ * @param document - the mutable tree being edited.
+ * @param section - the section about to receive a nested write.
+ */
+function ensureSectionIsMap(document: Document, section: 'refs' | 'records'): void {
+  // `document.set(section, {})` assigns the bare JS object as-is rather than
+  // wrapping it into a YAMLMap node, so a later `setIn` sees the same
+  // non-collection value it started with; `createNode` is what actually
+  // builds the map `isMap` (and `setIn`) recognize.
+  if (!isMap(document.get(section, true))) document.set(section, document.createNode({}))
+}
+
+/**
  * Render the next document text with one reference set or deleted.
  * @param text - the current document text, `undefined` while the file is absent.
  * @param ref - the reference to write.
@@ -442,8 +460,12 @@ function mutableDocument(text: string | undefined): Document {
  */
 function renderRef(text: string | undefined, ref: CredentialRef, value: string | undefined): string {
   const document = mutableDocument(text)
-  if (value === undefined) deleteSectionEntry(document, 'refs', ref)
-  else document.setIn(['refs', ref], value)
+  if (value === undefined) {
+    deleteSectionEntry(document, 'refs', ref)
+  } else {
+    ensureSectionIsMap(document, 'refs')
+    document.setIn(['refs', ref], value)
+  }
   return document.toString()
 }
 
@@ -458,8 +480,12 @@ function renderRef(text: string | undefined, ref: CredentialRef, value: string |
  */
 function renderRecord(text: string | undefined, key: CredentialKey, record: CredentialRecord | undefined): string {
   const document = mutableDocument(text)
-  if (record === undefined) deleteSectionEntry(document, 'records', key)
-  else document.setIn(['records', key], record)
+  if (record === undefined) {
+    deleteSectionEntry(document, 'records', key)
+  } else {
+    ensureSectionIsMap(document, 'records')
+    document.setIn(['records', key], record)
+  }
   return document.toString()
 }
 

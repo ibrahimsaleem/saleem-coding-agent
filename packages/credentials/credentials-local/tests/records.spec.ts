@@ -89,6 +89,20 @@ describe('record storage', () => {
     expect(await reread.credentials.readRecord(CODEX)).toEqual({ kind: 'grant', payload })
   })
 
+  it('writes a record into a document whose records section is a bare (null) key', async () => {
+    // Mirrors the refs-side regression: a hand-written or older-writer
+    // document can leave `records:` present with no value (a null scalar,
+    // not a map) rather than absent or `records: {}`. `setIn` refuses to
+    // replace an existing non-collection node, so this used to throw
+    // "Expected YAML collection at records. Remaining path: ...".
+    const dir = await tempDir()
+    const path = join(dir, '.credentials.yaml')
+    await writeCredentials(path, 'version: 1\nrefs: {}\nrecords:\n')
+    const ctx = await boot({ path, watch: false })
+    await put(ctx, CODEX, { kind: 'api-key' })
+    expect(await ctx.credentials.readRecord(CODEX)).toEqual({ kind: 'api-key' })
+  })
+
   it('treats a record carrying no key and no environment as configured', async () => {
     const dir = await tempDir()
     const ctx = await boot({ path: join(dir, '.credentials.yaml'), watch: false })

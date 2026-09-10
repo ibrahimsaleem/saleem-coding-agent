@@ -324,6 +324,21 @@ describe('document writes', () => {
     expect(seen).toEqual([KEY])
   })
 
+  it('adds a key to a document whose refs section is a bare (null) key', async () => {
+    // A hand-written or older-writer document can leave `refs:` present with
+    // no value — a null scalar, not a map — rather than absent entirely or
+    // `refs: {}`. `setIn` auto-vivifies a missing key into a map but refuses
+    // to replace an existing non-collection node, so this used to throw
+    // "Expected YAML collection at refs. Remaining path: DSH_CRED_TEST".
+    const dir = await tempDir()
+    const path = join(dir, '.credentials.yaml')
+    await writeCredentials(path, 'version: 1\nrefs:\n')
+    const ctx = await boot({ path, watch: false })
+    await ctx.credentials.set(KEY, 'sk-fresh')
+    expect(await readFile(path, 'utf8')).toBe('version: 1\nrefs:\n  DSH_CRED_TEST: sk-fresh\n')
+    expect(await ctx.credentials.resolve(KEY)).toEqual({ value: 'sk-fresh', source: 'file' })
+  })
+
   it('patches one entry, preserving comments and every untouched entry', async () => {
     const dir = await tempDir()
     const path = join(dir, '.credentials.yaml')
