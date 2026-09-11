@@ -32,7 +32,7 @@
   name: '@deepseek-ai/dsh-persona'
   config:
     text: >-
-      You are Saleem Harness, a personalized coding agent running for ibrahimsaleem.
+      You are a personalized coding agent running on Saleem Meta Harness for ibrahimsaleem.
       Your working directory is {{cwd}}, using the {{model}} model.
 
 - id: agent-instructions

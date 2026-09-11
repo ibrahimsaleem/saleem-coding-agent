@@ -4,7 +4,7 @@ import type { SidebarBrandMarkOwnerProps } from '@deepseek-ai/dsh-client-ui-side
 type SaleemBrandMarkProps = HeroBrandMarkOwnerProps & SidebarBrandMarkOwnerProps
 
 /**
- * Render the Saleem Harness mark with the presentation requested by its host
+ * Render the Saleem Meta Harness mark with the presentation requested by its host
  * surface. Deliberately plain text, not a reused DeepSeek asset — see
  * BRAND_GUIDELINES.md.
  * @param props - Host-supplied mark presentation.
@@ -31,9 +31,9 @@ export function SaleemBrandMark({ size, className }: SaleemBrandMarkProps) {
 }
 
 /**
- * Render the Saleem Harness name.
+ * Render the Saleem Meta Harness name.
  * @returns the Saleem name wordmark.
  */
 export function SaleemBrandName() {
-  return <span style={{ fontWeight: 600 }}>Saleem Harness</span>
+  return <span style={{ fontWeight: 600 }}>Saleem Meta Harness</span>
 }

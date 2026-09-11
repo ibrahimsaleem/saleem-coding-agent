@@ -14,12 +14,12 @@ export const WELCOME_NOTICE_VERSION = '2026-08-13.1'
 export const WELCOME_NOTICE_COPY = {
   zh: {
     title: '欢迎',
-    body: 'Saleem Harness 仍在积极开发中，核心插件与基础 API 可能会快速演化。',
+    body: 'Saleem Meta Harness 仍在积极开发中，核心插件与基础 API 可能会快速演化。',
     continueLabel: '继续',
   },
   en: {
     title: 'Welcome',
-    body: 'Saleem Harness is under active development; core plugins and foundational APIs may evolve quickly.',
+    body: 'Saleem Meta Harness is under active development; core plugins and foundational APIs may evolve quickly.',
     continueLabel: 'Continue',
   },
 } as const

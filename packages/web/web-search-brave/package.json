@@ -1,6 +1,6 @@
 {
   "name": "@ibrahimsaleem/dsh-web-search-brave",
-  "description": "Brave-Search-backed search provider for Saleem Harness's web capability seam (ctx.web) — free tier, no payment method required",
+  "description": "Brave-Search-backed search provider for Saleem Meta Harness's web capability seam (ctx.web) — free tier, no payment method required",
   "version": "0.1.0",
   "private": true,
   "repository": {

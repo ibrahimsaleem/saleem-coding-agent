@@ -1,5 +1,5 @@
 /**
- * Preventive tool-call guard for Saleem Harness.
+ * Preventive tool-call guard for Saleem Meta Harness.
  *
  * Registers a synchronous `ctx.tools.guard()` callback, evaluated after
  * `tools/pre-execute` and before the tool body dispatches (see
@@ -59,7 +59,7 @@ export const checkExecution: ToolGuard = (execution: Readonly<ToolExecution>): s
   }
   for (const rule of RULES) {
     if (rule.re.test(text)) {
-      return `Saleem Harness guard blocked "${execution.name}": matched a high-confidence malicious pattern (${rule.label}). `
+      return `Saleem Meta Harness guard blocked "${execution.name}": matched a high-confidence malicious pattern (${rule.label}). `
         + 'This is a preventive guard, not a judgment call about your intent — if this is a false positive, '
         + 'narrow its rule set in packages/guard/tool-guard-saleem/src/index.ts.'
     }

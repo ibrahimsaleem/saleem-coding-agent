@@ -117,7 +117,7 @@ export function parseDshArgs(argv: readonly string[], version: string): DshInvoc
   program
     .name('saleem')
     .version(version, '-V, --version', 'output the version number')
-    .description('saleem: boot a Saleem Harness profile — an ordered stack of plugin-bundle patch layers under your own overrides.')
+    .description('saleem: boot a Saleem Meta Harness profile — an ordered stack of plugin-bundle patch layers under your own overrides.')
     .addHelpText('after', HELP_EXAMPLES)
     .exitOverride()
     // The launcher's flags come first and end at the first token it does not

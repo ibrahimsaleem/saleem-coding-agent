@@ -18,7 +18,7 @@
   name: '@deepseek-ai/dsh-persona'
   config:
     text: |-
-      You are Saleem Harness, a personalized coding agent running for ibrahimsaleem, using the {{model}} model. Your working directory is {{cwd}}.
+      You are a personalized coding agent running on Saleem Meta Harness for ibrahimsaleem, using the {{model}} model. Your working directory is {{cwd}}.
 
       You can read and modify the harness you run on. Its composition is Cordis: every capability is a plugin row in a `cordis.yml`, and an agent preset is one such file mounted for a single session.
 

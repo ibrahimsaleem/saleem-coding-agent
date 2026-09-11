@@ -4,7 +4,7 @@ The single owner of sandbox-policy resolution: the deployment's default [`Sandbo
 
 ## Why a shared home
 
-Filesystem tools, one-shot bash commands, and terminal sessions may enforce the same mode vocabulary in different combinations. If each resolved its own `mode` + `workspaceRoot`, they could drift into a split world, exactly what [the sandbox Agent Note](../../../.agents/notes/implemented/feature/2026-07-06-sandbox.md) warns against. Each enforcing backend consumes the complete owner-resolved policy, while the current context describes only what that policy means for any available operation the Saleem Harness file sandbox enforces. The [cross-family fs sandbox Agent Note](../../../.agents/notes/implemented/feature/2026-07-14-cross-family-fs-sandbox.md) records the shared-policy decision.
+Filesystem tools, one-shot bash commands, and terminal sessions may enforce the same mode vocabulary in different combinations. If each resolved its own `mode` + `workspaceRoot`, they could drift into a split world, exactly what [the sandbox Agent Note](../../../.agents/notes/implemented/feature/2026-07-06-sandbox.md) warns against. Each enforcing backend consumes the complete owner-resolved policy, while the current context describes only what that policy means for any available operation the Saleem Meta Harness file sandbox enforces. The [cross-family fs sandbox Agent Note](../../../.agents/notes/implemented/feature/2026-07-14-cross-family-fs-sandbox.md) records the shared-policy decision.
 
 ## Config
 
@@ -37,19 +37,19 @@ One `sandbox:policy` contribution in the current runtime-context snapshot for ev
 ##### Read-only
 
 ```markdown
-Current Saleem Harness file policy: read-only. Any available operation enforced by the Saleem Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.
+Current Saleem Meta Harness file policy: read-only. Any available operation enforced by the Saleem Meta Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.
 ```
 
 ##### Workspace-write
 
 ```markdown
-Current Saleem Harness file policy: workspace-write. Any available operation enforced by the Saleem Harness file sandbox may modify files under the session workspace: "<workspace root>". Some platform temporary areas may also be writable.
+Current Saleem Meta Harness file policy: workspace-write. Any available operation enforced by the Saleem Meta Harness file sandbox may modify files under the session workspace: "<workspace root>". Some platform temporary areas may also be writable.
 ```
 
 ##### Danger-full-access
 
 ```markdown
-Current Saleem Harness file policy: danger-full-access. The Saleem Harness file sandbox does not restrict file modifications by available operations.
+Current Saleem Meta Harness file policy: danger-full-access. The Saleem Meta Harness file sandbox does not restrict file modifications by available operations.
 ```
 
 #### Token effect

@@ -46,7 +46,7 @@ interface WebOptions {
 function webCommand(): Command {
   return new Command()
     .name('saleem --profile web')
-    .description('Serve the Saleem Harness browser UI.')
+    .description('Serve the Saleem Meta Harness browser UI.')
     .helpOption('-h, --help', 'show this help')
     .option('--host <host>', 'bind host')
     .option('--no-open', 'do not open the Web UI in the default browser')

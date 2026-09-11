@@ -153,9 +153,9 @@ describe('sandbox:policy request context', () => {
     const ctx = await promptMounted({ mode, workspaceRoot: '/fallback' })
     const workspaceRoot = resolve('/projects/current')
     const expected = {
-      'read-only': 'Current Saleem Harness file policy: read-only. Any available operation enforced by the Saleem Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.',
-      'workspace-write': `Current Saleem Harness file policy: workspace-write. Any available operation enforced by the Saleem Harness file sandbox may modify files under the session workspace: ${JSON.stringify(workspaceRoot)}. Some platform temporary areas may also be writable.`,
-      'danger-full-access': 'Current Saleem Harness file policy: danger-full-access. The Saleem Harness file sandbox does not restrict file modifications by available operations.',
+      'read-only': 'Current Saleem Meta Harness file policy: read-only. Any available operation enforced by the Saleem Meta Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.',
+      'workspace-write': `Current Saleem Meta Harness file policy: workspace-write. Any available operation enforced by the Saleem Meta Harness file sandbox may modify files under the session workspace: ${JSON.stringify(workspaceRoot)}. Some platform temporary areas may also be writable.`,
+      'danger-full-access': 'Current Saleem Meta Harness file policy: danger-full-access. The Saleem Meta Harness file sandbox does not restrict file modifications by available operations.',
     } as const
 
     expect(await policyContext(ctx, session(`sess-${mode}`, '/projects/../projects/current'))).toBe(expected[mode])
@@ -189,11 +189,11 @@ describe('sandbox:policy request context', () => {
 
     setSandboxMode(active, 'danger-full-access')
     const danger = await policyContext(ctx, active)
-    expect(danger).toBe('Current Saleem Harness file policy: danger-full-access. The Saleem Harness file sandbox does not restrict file modifications by available operations.')
+    expect(danger).toBe('Current Saleem Meta Harness file policy: danger-full-access. The Saleem Meta Harness file sandbox does not restrict file modifications by available operations.')
     expect(await policyContext(ctx, active)).toBe(danger)
 
     setSandboxMode(active, 'workspace-write')
-    expect(await policyContext(ctx, active)).toBe(`Current Saleem Harness file policy: workspace-write. Any available operation enforced by the Saleem Harness file sandbox may modify files under the session workspace: ${JSON.stringify(resolve('/projects/current'))}. Some platform temporary areas may also be writable.`)
+    expect(await policyContext(ctx, active)).toBe(`Current Saleem Meta Harness file policy: workspace-write. Any available operation enforced by the Saleem Meta Harness file sandbox may modify files under the session workspace: ${JSON.stringify(resolve('/projects/current'))}. Some platform temporary areas may also be writable.`)
   })
 
   it('reconstructs resumed policy from the session log and omits diagnostics without an agent', async () => {

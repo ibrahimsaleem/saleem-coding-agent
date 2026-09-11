@@ -1,6 +1,6 @@
 # `@ibrahimsaleem/dsh-llm-free-model-router`
 
-Run the Saleem Harness fully free. Activate one or more free API platforms and
+Run the Saleem Meta Harness fully free. Activate one or more free API platforms and
 the router auto-picks a good free coding model per request, then transparently
 switches key / model / platform as each hits its per-minute rate limit, spends
 its daily quota, or rejects its key — degrading to local Ollama and only then

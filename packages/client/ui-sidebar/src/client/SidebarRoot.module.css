@@ -141,22 +141,33 @@
   justify-content: center;
 }
 
+/* The wordmark sits in a fixed 24px-high slot, so it must never wrap: a
+   two-line name is clipped to its top half rather than pushed down, which
+   reads as a rendering bug. Names too wide for the column ellipsize instead.
+   16px keeps "Saleem Meta Harness" on one line at the default width. */
 .brandName {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
   height: 24px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
   line-height: 24px;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .fallbackBrandName {
   font-size: 17px;
   letter-spacing: 0px;
   white-space: nowrap;
+  /* nowrap alone only stops the wrap; without these the name overflows the
+     column instead of ending in an ellipsis. */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .iconButton {

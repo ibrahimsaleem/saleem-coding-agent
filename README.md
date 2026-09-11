@@ -1,13 +1,41 @@
-# Saleem Harness
+# Saleem Meta Harness
 
-A personalized coding-agent CLI (`saleem`) and web UI, built on an architecture where
-**everything is a plugin** and powered by [Cordis](https://github.com/cordiverse/cordis)
-(design: [_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)).
+**Describe the AI agent you need. Get one that runs.**
+
+A harness is a specialized agent: its own system prompt, its own methodology playbook, and
+its own set of capabilities. This is the factory that builds them — you describe what you
+want in plain language, and it produces a working harness you can run immediately or
+download as a standalone app to hand to someone else.
+
+Four shapes ship as starting points: **security review**, **code review**, **red team /
+model behaviour**, and **benchmarking**. Each one fans work out across parallel subagents,
+puts its own findings through an adversarial judge before reporting them, and carries the
+full capability stack — workflows, bounded iterate-until-done loops, background jobs,
+skills, goals and plan mode.
+
+Every generated harness is **verified by actually being mounted** before you are told it
+exists, so "it built" and "it runs" are the same claim.
+
+Underneath, it is a CLI (`saleem`) and web UI on an architecture where **everything is a
+plugin**, powered by [Cordis](https://github.com/cordiverse/cordis) (design:
+[_A Programming Paradigm for Spatiotemporal Composability_](https://github.com/cordiverse/paper)).
 It ships a preventive tool-call safety guard active by default
 (`packages/guard/tool-guard-saleem/`) and a built-in observability panel, the **Harness
 Monitor**.
 
-![Saleem Harness web UI](docs/images/harness-ui.jpg)
+![Saleem Meta Harness web UI](docs/images/harness-ui.jpg)
+
+## Build a harness
+
+Open the web UI, click **✦ Create Harness**, pick a starting point (or let the model
+choose), and describe what you want. You get back:
+
+- **Run it** — opens a session on the new harness immediately.
+- **Download** — a small archive that builds its runtime on first run.
+- **Download standalone** — the runtime included; unzip and run with only Node installed.
+
+How it works, and why a generated harness always mounts, is documented in
+[`packages/preset/harness-factory/`](packages/preset/harness-factory/README.md).
 
 ## Developer preview
 

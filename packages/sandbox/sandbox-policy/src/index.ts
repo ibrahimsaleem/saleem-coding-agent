@@ -38,11 +38,11 @@ function resolveWorkspaceRoot(path: string): string {
 function renderPolicyContext(policy: SandboxExecutionPolicy): string {
   switch (policy.mode) {
     case 'read-only':
-      return 'Current Saleem Harness file policy: read-only. Any available operation enforced by the Saleem Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.'
+      return 'Current Saleem Meta Harness file policy: read-only. Any available operation enforced by the Saleem Meta Harness file sandbox cannot modify files in the standing mode. Do not refuse a required modification from this policy alone: try an available tool normally and follow any denial and escalation guidance it returns.'
     case 'workspace-write':
-      return `Current Saleem Harness file policy: workspace-write. Any available operation enforced by the Saleem Harness file sandbox may modify files under the session workspace: ${JSON.stringify(policy.workspaceRoot)}. Some platform temporary areas may also be writable.`
+      return `Current Saleem Meta Harness file policy: workspace-write. Any available operation enforced by the Saleem Meta Harness file sandbox may modify files under the session workspace: ${JSON.stringify(policy.workspaceRoot)}. Some platform temporary areas may also be writable.`
     case 'danger-full-access':
-      return 'Current Saleem Harness file policy: danger-full-access. The Saleem Harness file sandbox does not restrict file modifications by available operations.'
+      return 'Current Saleem Meta Harness file policy: danger-full-access. The Saleem Meta Harness file sandbox does not restrict file modifications by available operations.'
     /* v8 ignore next 4 -- SandboxMode is a typed same-process closed union; this branch is only the static exhaustiveness guard. */
     default: {
       const mode: never = policy.mode

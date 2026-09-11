@@ -68,8 +68,20 @@ describe('SidebarRoot.module.css', () => {
     expect(declarations('.brandIdentity')?.get('height')).toBe('24px')
     expect(declarations('.brandName')?.get('height')).toBe('24px')
     expect(declarations('.brandName')?.get('line-height')).toBe('24px')
-    expect(declarations('.brandName')?.get('font-size')).toBe('18px')
+    expect(declarations('.brandName')?.get('font-size')).toBe('16px')
     expect(declarations('.fallbackBrandName')?.get('font-size')).toBe('17px')
     expect(declarations('.fallbackBrandName')?.get('white-space')).toBe('nowrap')
+  })
+
+  it('never lets a wordmark wrap inside the fixed-height brand row', () => {
+    // The row is a fixed 24px, so a wrapped name is clipped to its top half
+    // rather than pushed down — it reads as a rendering bug, which is exactly
+    // what a longer product name produced here. Both the slotted wordmark and
+    // the fallback must stay on one line and ellipsize instead.
+    for (const selector of ['.brandName', '.fallbackBrandName']) {
+      expect(declarations(selector)?.get('white-space'), selector).toBe('nowrap')
+      expect(declarations(selector)?.get('overflow'), selector).toBe('hidden')
+      expect(declarations(selector)?.get('text-overflow'), selector).toBe('ellipsis')
+    }
   })
 })

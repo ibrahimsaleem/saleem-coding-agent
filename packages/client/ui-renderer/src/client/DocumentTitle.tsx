@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 
-const DEFAULT_CLIENT_TITLE = 'Saleem Harness'
+const DEFAULT_CLIENT_TITLE = 'Saleem Meta Harness'
 
 /** Props for the browser title projection. */
 export interface DocumentTitleProps {

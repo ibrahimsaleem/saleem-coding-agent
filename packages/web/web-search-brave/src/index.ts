@@ -6,7 +6,7 @@
  * `@deepseek-ai/dsh-web-search-exa` does for Exa.
  *
  * Brave's free tier (2,000 queries/month, no payment method required) is why
- * this is Saleem Harness's default search provider instead of a paid one.
+ * this is Saleem Meta Harness's default search provider instead of a paid one.
  *
  * @module @ibrahimsaleem/dsh-web-search-brave
  */
