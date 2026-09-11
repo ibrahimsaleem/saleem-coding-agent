@@ -3147,7 +3147,7 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
     // so the catalog is advertised but generation is refused — the page then
     // renders its real empty state rather than a fabricated success.
     harness: {
-      templates: request => ok(request, { templates: [], available: false }),
+      templates: request => ok(request, { templates: [], available: false, canPackBundled: false }),
       generate: (request): Promise<RpcResponse<{ harness: GeneratedHarnessEntry }>> => err(request, {
         code: 'harness-unavailable' as const,
         message: 'the harness factory is not available in fixture mode',

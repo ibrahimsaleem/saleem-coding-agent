@@ -46,6 +46,7 @@ const templateEntrySchema = z.object({
 export const harnessTemplatesValueSchema = z.object({
   templates: z.array(templateEntrySchema),
   available: z.boolean(),
+  canPackBundled: z.boolean(),
 }) as unknown as z.ZodType<Wire<ResponseValue<'harness.templates'>>>
 
 const generatedHarnessSchema = z.object({
@@ -69,6 +70,12 @@ export const harnessGenerateValueSchema = z.object({
  * roster's own preset-id shape here, at the boundary, so a traversal attempt
  * is a 400 rather than something the service has to defend against.
  */
-export const harnessPackQuerySchema = z.object({
-  agentPreset: z.string().min(1).max(48).regex(/^[a-z0-9][a-z0-9-]*$/u),
-})
+export const harnessPackQuerySchema = z
+  .object({
+    agentPreset: z.string().min(1).max(48).regex(/^[a-z0-9][a-z0-9-]*$/u),
+    mode: z.union([z.literal('bootstrap'), z.literal('bundled')]).optional(),
+  })
+  .transform(query => ({
+    agentPreset: query.agentPreset,
+    ...query.mode === undefined ? {} : { mode: query.mode },
+  }))

@@ -9,7 +9,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { unzipSync, strFromU8 } from 'fflate'
-import { packHarness, packManifest, packReadme, packSettings } from '../src/export.ts'
+import {
+  HARNESS_RUNTIME_REPO, packHarness, packLauncherCmd, packLauncherSh, packManifest, packReadme, packSettings,
+} from '../src/export.ts'
 
 const made: string[] = []
 function presetDir(): string {
@@ -78,28 +80,77 @@ describe('packed files', () => {
     expect(packSettings('x')).toContain('mode: workspace-write')
   })
 
-  it('writes a manifest naming the CLI the launcher needs', () => {
+  it('writes a manifest that identifies the folder without inventing a dependency', () => {
     const manifest = JSON.parse(packManifest('my-harness', 'Does a thing.')) as {
       name: string
-      dependencies: Record<string, string>
+      private: boolean
+      scripts: Record<string, string>
+      dependencies?: Record<string, string>
     }
     expect(manifest.name).toBe('my-harness')
-    expect(manifest.dependencies['saleem-harness-cli']).toBeDefined()
+    expect(manifest.private).toBe(true)
+    expect(manifest.scripts['start']).toContain('runtime')
+    // Deliberately NO dependency on the CLI: it is not published, so declaring
+    // it would make `npm install` here fail and send the reader chasing a
+    // registry that has nothing for them. The launcher resolves the runtime.
+    expect(manifest.dependencies).toBeUndefined()
   })
 
-  it('tells the reader plainly that the runtime is not in the box', () => {
-    // The one thing this README must not do is imply the zip is self-sufficient.
-    const readme = packReadme('my-harness', 'My Harness', 'Does a thing.', [])
-    expect(readme).toContain('not the harness runtime')
+  it('tells a bootstrap reader plainly that the runtime is not in the box', () => {
+    // The one thing this README must not do is imply the small zip is self-sufficient.
+    const readme = packReadme('my-harness', 'My Harness', 'Does a thing.', [], 'bootstrap')
+    expect(readme).toContain('not** in this archive')
+    expect(readme).toContain('pnpm')
+  })
+
+  it('tells a bundled reader the runtime IS included, and which platform it was built for', () => {
+    const readme = packReadme('h', 'H', 'd', [], 'bundled', 'win32-x64')
+    expect(readme).toContain('runtime is included')
+    expect(readme).toContain('win32-x64')
+    // The platform caveat is the honest half; losing it would make the pack
+    // look portable when its native modules are not.
+    expect(readme).toContain('platform-specific')
   })
 
   it('lists the phases when the harness came from a template', () => {
-    const readme = packReadme('h', 'H', 'd', ['Scope', 'Scan'])
+    const readme = packReadme('h', 'H', 'd', ['Scope', 'Scan'], 'bootstrap')
     expect(readme).toContain('1. Scope')
     expect(readme).toContain('2. Scan')
   })
 
   it('omits the phase section when there are none, rather than printing an empty heading', () => {
-    expect(packReadme('h', 'H', 'd', [])).not.toContain('## How it works')
+    expect(packReadme('h', 'H', 'd', [], 'bootstrap')).not.toContain('## How it works')
+  })
+})
+
+describe('launchers', () => {
+  it('prefers a bundled runtime, then a cached one, then an install, then bootstrap', () => {
+    const sh = packLauncherSh('bootstrap')
+    const bundledAt = sh.indexOf('./runtime/lib/bin.js')
+    const cachedAt = sh.indexOf('./runtime/apps/cli/lib/bin.js')
+    const installAt = sh.indexOf('node_modules/saleem-harness-cli')
+    const cloneAt = sh.indexOf('git clone')
+    // The expensive step must be last, or every run pays for the first run again.
+    expect(bundledAt).toBeGreaterThan(0)
+    expect(cachedAt).toBeGreaterThan(bundledAt)
+    expect(installAt).toBeGreaterThan(cachedAt)
+    expect(cloneAt).toBeGreaterThan(installAt)
+  })
+
+  it('names every missing tool instead of dying on the first one', () => {
+    for (const script of [packLauncherSh('bootstrap'), packLauncherCmd('bootstrap')]) {
+      for (const tool of ['git', 'node', 'pnpm']) expect(script).toContain(tool)
+    }
+  })
+
+  it('still bootstraps from a bundled pack, so a platform mismatch is recoverable', () => {
+    // A bundled pack unzipped on the wrong OS has an unusable runtime/. Falling
+    // through to the build is what keeps that a slow start rather than a dead end.
+    expect(packLauncherSh('bundled')).toContain('git clone')
+    expect(packLauncherCmd('bundled')).toContain('git clone')
+  })
+
+  it('points the bootstrap at the published repository', () => {
+    expect(packLauncherSh('bootstrap')).toContain(HARNESS_RUNTIME_REPO)
   })
 })

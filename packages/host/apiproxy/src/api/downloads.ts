@@ -33,5 +33,5 @@ export interface DownloadsApi {
    * @returns the ZIP attachment response; a missing factory answers 500 and an
    * unknown preset 404 before any byte is produced.
    */
-  harnessPack(request: { agentPreset: string }, signal: AbortSignal): Promise<Response>
+  harnessPack(request: { agentPreset: string; mode?: 'bootstrap' | 'bundled' }, signal: AbortSignal): Promise<Response>
 }

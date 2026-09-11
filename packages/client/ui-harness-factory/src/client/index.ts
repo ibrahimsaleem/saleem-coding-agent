@@ -95,7 +95,8 @@ export function apply(ctx: ClientContext): void {
           window.location.reload()
         })()
       },
-      downloadUrl: agentPreset => `/api/harness.export?agentPreset=${encodeURIComponent(agentPreset)}`,
+      downloadUrl: (agentPreset, mode) =>
+        `/api/harness.export?agentPreset=${encodeURIComponent(agentPreset)}&mode=${mode}`,
     }
     return { client, t: ctx.locale.bind(LOCALE_NS) }
   }

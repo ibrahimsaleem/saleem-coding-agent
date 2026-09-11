@@ -39,3 +39,7 @@ apps/web/dist/
 worktrees/
 .agents/worktrees/
 .typert-*/
+
+# Self-contained runtime bundle built by `pnpm run build:runtime-bundle`;
+# hundreds of MB of deployed node_modules, and platform-specific.
+.dsh-runtime/

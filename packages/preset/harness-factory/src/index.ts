@@ -33,7 +33,9 @@
  * @module @ibrahimsaleem/dsh-harness-factory
  */
 
-import { dirname } from 'node:path'
+import { existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { Context, Service } from '@deepseek-ai/cordis'
 import z from '@deepseek-ai/schemastery'
 import type {} from '@deepseek-ai/dsh-agent-presets'
@@ -42,18 +44,18 @@ import { packHarness } from './export.ts'
 import { renderHarness } from './render.ts'
 import { parseHarnessSpec } from './spec.ts'
 import { findTemplate, HARNESS_TEMPLATES, toggleAllowlist } from './templates.ts'
-import type { HarnessPack } from './export.ts'
+import type { HarnessPack, HarnessPackMode } from './export.ts'
 import type { HarnessSpec } from './spec.ts'
 import type { HarnessTemplate } from './templates.ts'
 
 export { HARNESS_TEMPLATES, findTemplate, toggleAllowlist } from './templates.ts'
 export { parseHarnessSpec, HARNESS_ID } from './spec.ts'
 export { renderComposition, renderSkillMarkdown, HarnessRenderError } from './render.ts'
-export { packHarness, packSettings, packManifest, packReadme } from './export.ts'
+export { packHarness, packSettings, packManifest, packReadme, HARNESS_RUNTIME_REPO } from './export.ts'
 export { generateHarnessSpec, systemPrompt, extractJson, HarnessGenerationError } from './generate.ts'
 export type { HarnessSpec, HarnessSkillSpec, HarnessSpecResult, SpecValidationContext } from './spec.ts'
 export type { HarnessTemplate, HarnessToggle } from './templates.ts'
-export type { HarnessPack } from './export.ts'
+export type { HarnessPack, HarnessPackMode } from './export.ts'
 
 /** Cordis plugin name. */
 export const name = 'harness-factory'
@@ -66,6 +68,8 @@ export interface Config {
   provider?: string
   /** Model id for the generation call; omitted means the deployment default. */
   model?: string
+  /** Prebuilt runtime root for self-contained packs; omitted means `.dsh-runtime` beside the install. */
+  runtimeDir?: string
 }
 
 /** One built harness, as the caller sees it. */
@@ -109,6 +113,7 @@ export class HarnessFactory extends Service {
     order: z.natural().default(100),
     provider: z.string(),
     model: z.string(),
+    runtimeDir: z.string(),
   })
 
   private readonly config: Config
@@ -221,23 +226,69 @@ export class HarnessFactory extends Service {
   }
 
   /**
+   * Where a bundled pack reads its prebuilt runtime from.
+   *
+   * The runtime is not built on demand: a `pnpm deploy` of the CLI takes
+   * minutes and needs a package manager, neither of which belongs inside an
+   * HTTP request. It is built once by `pnpm run build:runtime-bundle` and read
+   * from here.
+   */
+  private runtimeBundleDir(): string {
+    if (this.config.runtimeDir !== undefined && this.config.runtimeDir !== '') return this.config.runtimeDir
+    // Default: `.dsh-runtime` beside the installation this service ships in.
+    // `import.meta.url` is .../packages/preset/harness-factory/{src,lib}/index.js
+    return resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '.dsh-runtime')
+  }
+
+  /**
+   * Whether a bundled pack can be produced right now.
+   *
+   * A plain existence check: the bundle is built by a script, and its own
+   * verification is what proves it runs. This only answers whether one is
+   * there, so the page can offer the standalone download instead of a button
+   * that fails.
+   */
+  canPackBundled(): boolean {
+    return existsSync(join(this.runtimeBundleDir(), 'lib', 'bin.js'))
+  }
+
+  /**
    * Pack one harness as a standalone runnable folder.
    * @param id - the preset id to pack.
-   * @returns the archive filename and bytes.
-   * @throws when no roster is mounted or the preset is unknown.
+   * @param mode - `bootstrap` (small, builds its runtime on first run) or
+   *   `bundled` (self-contained, needs a prebuilt runtime on this host).
+   * @returns the archive filename, bytes and mode.
+   * @throws when no roster is mounted, the preset is unknown, or a bundled pack
+   *   is asked for without a prebuilt runtime.
    */
-  async pack(id: string): Promise<HarnessPack> {
+  async pack(id: string, mode: HarnessPackMode = 'bootstrap'): Promise<HarnessPack> {
     const presets = this.presets()
     if (presets === undefined) throw new HarnessGenerationError('no agent-preset roster is mounted')
     const preset = await presets.resolve(id)
     // The phase list is the template's when this harness came from one; a
     // hand-authored preset packs fine, just without that README section.
     const template = HARNESS_TEMPLATES.find(candidate => candidate.seed === preset.id)
-    return packHarness(dirname(preset.path), {
+    const base = {
       id: preset.id,
       name: preset.name ?? preset.id,
       description: preset.description ?? `The ${preset.id} harness.`,
       phases: template?.phases ?? [],
+    }
+    if (mode === 'bootstrap') return packHarness(dirname(preset.path), base)
+
+    const runtimeDir = this.runtimeBundleDir()
+    if (!existsSync(join(runtimeDir, 'lib', 'bin.js'))) {
+      throw new HarnessGenerationError(
+        `no prebuilt runtime at ${runtimeDir}, so a self-contained pack cannot be built. `
+        + 'Run "pnpm run build:runtime-bundle" in the harness repository once, then try again — '
+        + 'or download the smaller pack, which builds its own runtime on first run.',
+      )
+    }
+    return packHarness(dirname(preset.path), {
+      ...base,
+      mode: 'bundled',
+      runtimeDir,
+      runtimePlatform: `${process.platform}-${process.arch}`,
     })
   }
 }

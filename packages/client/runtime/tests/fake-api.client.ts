@@ -323,7 +323,7 @@ export class FakeApiClient implements IApiClient {
   }
 
   readonly harness: IApiClient['harness'] = {
-    templates: payload => this.record('harness.templates', payload, Promise.resolve(ok({ templates: [], available: false }))),
+    templates: payload => this.record('harness.templates', payload, Promise.resolve(ok({ templates: [], available: false, canPackBundled: false }))),
     generate: payload => this.record('harness.generate', payload, Promise.resolve({
       rpcId: RpcId(`fake-${nextRpc++}`),
       result: {

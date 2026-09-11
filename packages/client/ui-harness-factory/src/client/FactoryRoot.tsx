@@ -54,6 +54,7 @@ export function FactoryRoot({ wide, client, t }: FactoryRootProps): ReactElement
 function FactoryOverlay({ client, t, onClose }: { client: HarnessClient; t: Translate; onClose: () => void }): ReactElement {
   const [templates, setTemplates] = useState<readonly HarnessTemplateEntry[]>([])
   const [available, setAvailable] = useState<boolean | null>(null)
+  const [canPackBundled, setCanPackBundled] = useState(false)
   const [picked, setPicked] = useState<string | undefined>(undefined)
   const [prompt, setPrompt] = useState('')
   const [busy, setBusy] = useState(false)
@@ -69,6 +70,7 @@ function FactoryOverlay({ client, t, onClose }: { client: HarnessClient; t: Tran
         if (controller.signal.aborted) return
         setTemplates(catalog.templates)
         setAvailable(catalog.available)
+        setCanPackBundled(catalog.canPackBundled)
       } catch {
         if (!controller.signal.aborted) setAvailable(false)
       }
@@ -184,6 +186,7 @@ function FactoryOverlay({ client, t, onClose }: { client: HarnessClient; t: Tran
           <HarnessResult
             harness={result}
             client={client}
+            canPackBundled={canPackBundled}
             t={t}
             onAgain={() => { setResult(null); setPrompt(''); setError(null) }}
           />
@@ -222,9 +225,10 @@ function TemplateCard(props: {
 }
 
 /** The built harness: what it is, and the two things you can do with it. */
-function HarnessResult({ harness, client, t, onAgain }: {
+function HarnessResult({ harness, client, canPackBundled, t, onAgain }: {
   harness: GeneratedHarnessEntry
   client: HarnessClient
+  canPackBundled: boolean
   t: Translate
   onAgain: () => void
 }): ReactElement {
@@ -238,13 +242,21 @@ function HarnessResult({ harness, client, t, onAgain }: {
         <button type="button" className={css.primary} onClick={() => { client.runHarness(harness.id) }}>
           {t('run')}
         </button>
-        {/* A plain link: the host serves the archive on a GET route, so the
-            browser's own download manager fetches it — no blob, no memory copy. */}
-        <a className={css.secondary} href={client.downloadUrl(harness.id)} download>
+        {/* Plain links: the host serves each archive on a GET route, so the
+            browser's own download manager fetches it — no blob, no memory copy,
+            which is what makes a several-hundred-megabyte standalone pack
+            practical to offer at all. */}
+        <a className={css.secondary} href={client.downloadUrl(harness.id, 'bootstrap')} download>
           {t('download')}
         </a>
+        {canPackBundled && (
+          <a className={css.secondary} href={client.downloadUrl(harness.id, 'bundled')} download>
+            {t('downloadStandalone')}
+          </a>
+        )}
         <button type="button" className={css.secondary} onClick={onAgain}>{t('again')}</button>
       </div>
+      <p className={css.hint}>{t('downloadHint')}</p>
 
       <h3 className={css.sectionHeading}>{t('personaHeading')}</h3>
       <pre className={css.persona}>{harness.persona}</pre>

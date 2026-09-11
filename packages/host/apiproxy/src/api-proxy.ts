@@ -3200,9 +3200,12 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
       // instead of showing an error bar.
       templates(request) {
         const factory = ctx.get('harnessFactory')
-        if (factory === undefined) return Promise.resolve(ok(request, { templates: [], available: false }))
+        if (factory === undefined) {
+          return Promise.resolve(ok(request, { templates: [], available: false, canPackBundled: false }))
+        }
         return Promise.resolve(ok(request, {
           available: true,
+          canPackBundled: factory.canPackBundled(),
           templates: factory.templates().map(template => ({
             id: template.id,
             label: template.label,
@@ -3943,7 +3946,7 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
         }
         let pack
         try {
-          pack = await factory.pack(request.agentPreset)
+          pack = await factory.pack(request.agentPreset, request.mode ?? 'bootstrap')
           signal.throwIfAborted()
         } catch (error) {
           signal.throwIfAborted()

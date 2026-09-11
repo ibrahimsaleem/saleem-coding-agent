@@ -63,7 +63,16 @@ export interface HarnessApi {
    * deployment mounts no factory, rather than failing — the page then explains
    * itself instead of erroring.
    */
-  templates(request: RpcRequest<{}>): Promise<RpcResponse<{ templates: readonly HarnessTemplateEntry[]; available: boolean }>>
+  templates(request: RpcRequest<{}>): Promise<RpcResponse<{
+    templates: readonly HarnessTemplateEntry[]
+    available: boolean
+    /**
+     * Whether this host can produce a self-contained download. False when no
+     * runtime bundle has been built here — the small bootstrap pack still
+     * works, so the page offers that one alone rather than a dead button.
+     */
+    canPackBundled: boolean
+  }>>
 
   /**
    * Generate, build, and verify one harness from a natural-language

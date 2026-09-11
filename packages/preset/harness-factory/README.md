@@ -55,24 +55,58 @@ An empty `enable` list means "template defaults", which is every toggle on.
 
 ## Export
 
-`pack(id)` produces a zip laid out as a DSH home plus a launcher:
+`pack(id, mode)` produces a zip laid out as a DSH home plus a launcher:
 
 ```
 <id>/.dsh/.agent-presets/<id>/   the preset directory, verbatim
 <id>/.dsh/settings.yaml          default preset + workspace-write sandbox
-<id>/run.sh, <id>/run.cmd        set DSH_HOME, then boot the web profile
-<id>/package.json                names the CLI this needs
+<id>/run.sh, <id>/run.cmd        set DSH_HOME, find a runtime, launch
 <id>/README.md                   what it is, how to run it, what it needs
+<id>/runtime/                    (bundled mode only) the harness runtime
 ```
 
 The preset relocates safely because `copy()` dereferences symlinks and every template resolves
 its bundled skills through `new URL('skills/', baseUrl)` — the preset's own directory — rather
 than an absolute path.
 
-**The archive does not contain the harness runtime.** The launcher looks for a CLI installed
-beside the harness, then one on `PATH`, and otherwise explains what to install. The README says
-this plainly rather than implying the zip is self-sufficient — that honesty is a feature of the
-export, not an omission from it.
+### Two modes, because one cannot be both small and self-sufficient
+
+| | `bootstrap` (default) | `bundled` |
+|---|---|---|
+| Size | ~10 KB | ~60 MB compressed |
+| First run | clones and builds the runtime into `./runtime`, then caches it | starts immediately |
+| Needs | Node 22+, git, pnpm | Node 22+ |
+| Portable | yes — native modules are built on the target machine | **no** — built for one platform |
+
+The launcher's resolution order is: a bundled runtime, then one a previous bootstrap built, then
+an installed CLI beside the harness or on `PATH`, and only then a bootstrap. The expensive step
+is last, so a second run never repeats the first run's work. A bundled pack still falls through
+to bootstrapping, which is what turns a platform mismatch into a slow start rather than a dead end.
+
+### Building the runtime bundle
+
+`bundled` reads a prebuilt tree from `.dsh-runtime/`, produced by:
+
+```sh
+pnpm run build:runtime-bundle
+```
+
+It is a script rather than something the export does on demand because a `pnpm deploy` takes
+minutes and needs a package manager, neither of which belongs in an HTTP request. `templates()`
+reports `canPackBundled`, so the page offers the standalone download only where one exists
+instead of showing a button that fails.
+
+That script does two things worth knowing about, both learned by getting them wrong first:
+
+- **It deploys with `node-linker=hoisted`.** pnpm's default tree is a symlink farm into `.pnpm`,
+  and a ZIP entry cannot carry a symlink — a default-linked bundle unzips with every top-level
+  package missing. It asserts the tree is symlink-free before declaring success.
+- **It boots the real `web` profile to verify, not `--help`.** `--help` returns before the plugin
+  tree loads, so it proves only that `bin.js` is reachable; the first bundle passed that check and
+  then died on its first real boot with half the plugin graph missing. `--prod` drops peers this
+  repo declares as peer+dev, so the script boots, reads whichever module failed to resolve, copies
+  that package in from the workspace, and repeats until the profile starts. It currently repairs
+  19 packages.
 
 ## Surface
 

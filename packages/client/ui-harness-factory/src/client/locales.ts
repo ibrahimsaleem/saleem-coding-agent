@@ -24,7 +24,9 @@ export const zh = {
   droppedHeading: '未包含的请求',
   droppedHint: '该模板不提供这些能力，Harness 已在没有它们的情况下构建。',
   run: '运行',
-  download: '下载',
+  download: '下载（轻量）',
+  downloadStandalone: '下载（独立运行）',
+  downloadHint: '轻量包首次运行时自建运行时；独立包已内置运行时，体积数百 MB 且仅限本平台。',
   again: '再建一个',
   failed: '生成失败',
 } as const
@@ -54,6 +56,8 @@ export const en: Record<HarnessFactoryKey, string> = {
   droppedHint: 'This template does not offer these, so the harness was built without them.',
   run: 'Run it',
   download: 'Download',
+  downloadStandalone: 'Download standalone',
+  downloadHint: 'The small pack builds its runtime on first run (needs node, git and pnpm). The standalone pack has the runtime inside it — hundreds of MB, and built for this platform only.',
   again: 'Build another',
   failed: 'Generation failed',
 }
