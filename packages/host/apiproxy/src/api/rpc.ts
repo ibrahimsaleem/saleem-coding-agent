@@ -92,6 +92,10 @@ export interface RpcErrorDetailsMap {
   'subagent-not-resumable': { childSessionId: SessionId }
   'subagent-unauthorized': { childSessionId: SessionId }
   'subagent-delivery-unavailable': { childSessionId: SessionId }
+  /** The deployment mounts no harness factory, so a harness cannot be built. */
+  'harness-unavailable': {}
+  /** Generation ran but could not produce a harness that builds and mounts. */
+  'harness-generation-failed': {}
   /** A monitor drill-down named a session id no on-disk log matches. */
   'monitor-session-not-found': { sessionId: string }
   'internal': {}

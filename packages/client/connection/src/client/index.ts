@@ -29,6 +29,7 @@ export type {
   GoalsApi, GoalRef,
   SettingsApi, SettingsNamespaceView, SettingsPathOpView, SettingsSecretView,
   CredentialsApi, CredentialView, ConfigurableProviderView, DiscoveredModelView, LlmApi,
+  HarnessApi, HarnessTemplateEntry, GeneratedHarnessEntry,
   MonitorApi, MonitorSnapshot, MonitorSession, MonitorSecurityFinding, MonitorPermissionEvent,
   MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
   MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,

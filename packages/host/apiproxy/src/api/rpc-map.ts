@@ -13,6 +13,7 @@ import type { GoalsApi } from './goals.ts'
 import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
+import type { HarnessApi } from './harness.ts'
 import type { MonitorApi } from './monitor.ts'
 import type { RouterApi } from './router.ts'
 import type { SubagentsApi } from './subagents.ts'
@@ -79,6 +80,8 @@ export interface RpcMethodMap {
   'llm.providers': LlmApi['providers']
   'llm.models': LlmApi['models']
   'llm.discoverModels': LlmApi['discoverModels']
+  'harness.templates': HarnessApi['templates']
+  'harness.generate': HarnessApi['generate']
   'monitor.snapshot': MonitorApi['snapshot']
   'monitor.sessionTimeline': MonitorApi['sessionTimeline']
   'monitor.setGuardArmed': MonitorApi['setGuardArmed']

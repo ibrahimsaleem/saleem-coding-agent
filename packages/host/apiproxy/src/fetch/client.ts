@@ -62,6 +62,7 @@ import {
   credentialsDescribeValueSchema, credentialsSetValueSchema, credentialsUnsetValueSchema,
 } from '../api/credentials.schema.ts'
 import { llmDiscoverModelsValueSchema, llmModelsValueSchema, llmProvidersValueSchema } from '../api/llm.schema.ts'
+import { harnessGenerateValueSchema, harnessTemplatesValueSchema } from '../api/harness.schema.ts'
 import {
   monitorExportCsvValueSchema, monitorExportJsonValueSchema, monitorKillNowValueSchema,
   monitorSessionTimelineValueSchema, monitorSetGuardArmedValueSchema, monitorSnapshotValueSchema,
@@ -173,6 +174,10 @@ export interface IApiClient {
     models(payload: RequestPayload<'llm.models'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'llm.models'>>>
     discoverModels(payload: RequestPayload<'llm.discoverModels'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'llm.discoverModels'>>>
   }
+  harness: {
+    templates(payload: RequestPayload<'harness.templates'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'harness.templates'>>>
+    generate(payload: RequestPayload<'harness.generate'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'harness.generate'>>>
+  }
   monitor: {
     snapshot(payload: RequestPayload<'monitor.snapshot'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.snapshot'>>>
     sessionTimeline(payload: RequestPayload<'monitor.sessionTimeline'>, signal?: AbortSignal): Promise<RpcResponse<ResponseValue<'monitor.sessionTimeline'>>>
@@ -252,6 +257,8 @@ const UNARY_VALUE_SCHEMAS: { [K in keyof RpcMethodMap]: z.ZodType<Wire<ResponseV
   'llm.providers': llmProvidersValueSchema,
   'llm.models': llmModelsValueSchema,
   'llm.discoverModels': llmDiscoverModelsValueSchema,
+  'harness.templates': harnessTemplatesValueSchema,
+  'harness.generate': harnessGenerateValueSchema,
   'monitor.snapshot': monitorSnapshotValueSchema,
   'monitor.sessionTimeline': monitorSessionTimelineValueSchema,
   'monitor.setGuardArmed': monitorSetGuardArmedValueSchema,
@@ -542,6 +549,11 @@ export abstract class AbstractApiClient implements IApiClient {
     providers: (payload, signal) => this.callUnary('llm.providers', payload, signal),
     models: (payload, signal) => this.callUnary('llm.models', payload, signal),
     discoverModels: (payload, signal) => this.callUnary('llm.discoverModels', payload, signal),
+  }
+
+  readonly harness: IApiClient['harness'] = {
+    templates: (payload, signal) => this.callUnary('harness.templates', payload, signal),
+    generate: (payload, signal) => this.callUnary('harness.generate', payload, signal),
   }
 
   readonly monitor: IApiClient['monitor'] = {

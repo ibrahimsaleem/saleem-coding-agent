@@ -1,0 +1,3 @@
+name: Red Team Harness
+description: Evaluates model behaviour under adversarial pressure — scope gate, probe-suite design, systematic runs against a target you authorized, refusal-consistency scoring, and a reproducible evaluation report.
+order: 12

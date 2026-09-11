@@ -132,6 +132,10 @@ function scriptedApi(overrides: {
       ...overrides.llm,
     },
     events: { mux: () => empty<MuxFrame>(), host: () => empty<HostFrame>(), ...overrides.events },
+    harness: {
+      templates: err,
+      generate: err,
+    },
     monitor: {
       snapshot: err,
       sessionTimeline: err,
@@ -148,7 +152,10 @@ function scriptedApi(overrides: {
       testKey: err,
     },
     respond: overrides.respond ?? (() => Promise.resolve({ accepted: false as const, reason: 'not-pending' as const })),
-    downloads: { sessionLog: async () => new Response('stub', { status: 404 }) },
+    downloads: {
+      sessionLog: async () => new Response('stub', { status: 404 }),
+      harnessPack: async () => new Response('stub', { status: 404 }),
+    },
   }
 }
 

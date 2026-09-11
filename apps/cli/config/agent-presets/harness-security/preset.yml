@@ -1,0 +1,3 @@
+name: Security Review Harness
+description: Scans a repository for vulnerabilities — reconnaissance, per-file static scanning fanned out across subagents, exploit-chain analysis, local runtime validation, adversarial judge triage, and a written report.
+order: 10

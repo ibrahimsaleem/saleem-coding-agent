@@ -295,6 +295,10 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
       mux: (_request, signal) => stream(muxFrames, signal),
       host: (_request, signal) => stream(hostFrames, signal),
     },
+    harness: {
+      async templates(request) { return { rpcId: request.rpcId, result: { ok: false, error: { code: 'internal', message: 'stub', details: {} } } } },
+      async generate(request) { return { rpcId: request.rpcId, result: { ok: false, error: { code: 'internal', message: 'stub', details: {} } } } },
+    },
     monitor: {
       async snapshot(request) { return { rpcId: request.rpcId, result: { ok: false, error: { code: 'internal', message: 'stub', details: {} } } } },
       async sessionTimeline(request) { return { rpcId: request.rpcId, result: { ok: false, error: { code: 'internal', message: 'stub', details: {} } } } },
@@ -315,6 +319,9 @@ function fakeApi(overrides: Partial<{ muxFrames: MuxFrame[]; hostFrames: HostFra
     },
     downloads: {
       async sessionLog() {
+        return new Response('stub', { status: 404 })
+      },
+      async harnessPack() {
         return new Response('stub', { status: 404 })
       },
     },

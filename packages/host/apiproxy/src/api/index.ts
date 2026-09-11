@@ -15,6 +15,7 @@ import type { GoalsApi } from './goals.ts'
 import type { SettingsApi } from './settings.ts'
 import type { CredentialsApi } from './credentials.ts'
 import type { LlmApi } from './llm.ts'
+import type { HarnessApi } from './harness.ts'
 import type { MonitorApi } from './monitor.ts'
 import type { RouterApi } from './router.ts'
 import type { DownloadsApi } from './downloads.ts'
@@ -33,6 +34,7 @@ export interface ApiProxy {
   settings: SettingsApi
   credentials: CredentialsApi
   llm: LlmApi
+  harness: HarnessApi
   monitor: MonitorApi
   router: RouterApi
   /** Host-only download surfaces (GET, no wire envelope); absent from IApiClient. */
@@ -79,6 +81,7 @@ export type {
   RouterStateView, RouterSwitchReason,
 } from './router.ts'
 export type { DownloadsApi } from './downloads.ts'
+export type { GeneratedHarnessEntry, HarnessApi, HarnessTemplateEntry } from './harness.ts'
 export type { ApprovalResponsePayload } from './approvals.ts'
 
 export type { QuestionResponsePayload } from './questions.ts'

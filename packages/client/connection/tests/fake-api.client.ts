@@ -269,6 +269,17 @@ export class FakeApiClient implements IApiClient {
     discoverModels: payload => this.record('llm.discoverModels', payload, Promise.resolve(ok({ models: [] }))),
   }
 
+  readonly harness: IApiClient['harness'] = {
+    templates: payload => this.record('harness.templates', payload, Promise.resolve(ok({ templates: [], available: false }))),
+    generate: payload => this.record('harness.generate', payload, Promise.resolve({
+      rpcId: RpcId(`fake-${nextRpc++}`),
+      result: {
+        ok: false as const,
+        error: { code: 'harness-unavailable' as const, message: 'no harness factory in tests', details: {} },
+      },
+    })),
+  }
+
   readonly monitor: IApiClient['monitor'] = {
     snapshot: payload => this.record('monitor.snapshot', payload, Promise.resolve(ok(fakeMonitorSnapshot()))),
     sessionTimeline: payload => this.record('monitor.sessionTimeline', payload, Promise.resolve(ok({

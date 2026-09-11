@@ -1,0 +1,62 @@
+/** `harness-factory` namespace dictionary: the Harness Factory page's copy. */
+
+/** Simplified Chinese dictionary (the key-set source of truth). */
+export const zh = {
+  trigger: '造工坊',
+  title: '创建你的 Harness',
+  close: '关闭',
+  subtitle: '描述你需要的 Harness，它会基于经过验证的模板生成，可直接运行或下载。',
+  templateHeading: '选择一个起点',
+  templateAuto: '自动选择',
+  templateAutoBlurb: '由模型根据你的描述挑选最合适的模板。',
+  phases: '流程',
+  promptLabel: '描述你想要的 Harness',
+  promptPlaceholder: '例如：扫描 Node 仓库的安全问题并输出报告的 Harness',
+  generate: '生成 Harness',
+  generating: '正在生成…',
+  generatingHint: '模型正在编写角色设定与方法论，随后会复制模板、渲染并挂载验证。',
+  unavailable: '当前部署未启用 Harness 工坊。',
+  unavailableHint: '需要挂载 harness-factory 服务，并具备可写的 preset 目录与已配置的模型。',
+  resultHeading: '已生成',
+  personaHeading: '角色设定',
+  skillsHeading: '方法论',
+  capabilitiesHeading: '能力',
+  droppedHeading: '未包含的请求',
+  droppedHint: '该模板不提供这些能力，Harness 已在没有它们的情况下构建。',
+  run: '运行',
+  download: '下载',
+  again: '再建一个',
+  failed: '生成失败',
+} as const
+
+/** English dictionary. */
+export const en: Record<HarnessFactoryKey, string> = {
+  trigger: 'Create Harness',
+  title: 'Create your own harness',
+  close: 'Close',
+  subtitle: 'Describe the harness you need. It is built from a proven template, then run or downloaded.',
+  templateHeading: 'Pick a starting point',
+  templateAuto: 'Choose for me',
+  templateAutoBlurb: 'Let the model pick the closest template from your description.',
+  phases: 'Phases',
+  promptLabel: 'Describe the harness you want',
+  promptPlaceholder: 'e.g. a harness that scans a Node repo for security problems and writes a report',
+  generate: 'Generate harness',
+  generating: 'Generating…',
+  generatingHint: 'The model is writing the persona and methodology; then the template is copied, rendered and mounted to prove it runs.',
+  unavailable: 'This deployment does not have the Harness Factory enabled.',
+  unavailableHint: 'It needs the harness-factory service mounted, a writable preset root, and a configured model.',
+  resultHeading: 'Your harness is ready',
+  personaHeading: 'Persona',
+  skillsHeading: 'Methodology',
+  capabilitiesHeading: 'Capabilities',
+  droppedHeading: 'Not included',
+  droppedHint: 'This template does not offer these, so the harness was built without them.',
+  run: 'Run it',
+  download: 'Download',
+  again: 'Build another',
+  failed: 'Generation failed',
+}
+
+/** Key union for the namespace. */
+export type HarnessFactoryKey = keyof typeof zh

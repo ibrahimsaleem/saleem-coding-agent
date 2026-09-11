@@ -101,6 +101,15 @@ const PRIVILEGED_METHODS = new Set([
   // deployment's own default already carries `bash` and the filesystem tools, so
   // any caller that may start a session at all can already run commands as this
   // process. Pinning the switch would be a fence beside an open gate.
+  // The Harness Factory builds and reads preset directories: `generate` writes
+  // a new one and mounts it, and `export` reads one back as an archive. That is
+  // the same authority as the agentPreset.copy / agentPreset.read pair above,
+  // so it carries the same pin. `harness.export` is a GET download rather than
+  // an envelope call, but the fence keys on the path after /api/, so naming it
+  // here pins the route too.
+  'harness.templates',
+  'harness.generate',
+  'harness.export',
   'agentPreset.read',
   'agentPreset.copy',
   'agentPreset.openDocument',

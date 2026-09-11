@@ -89,6 +89,7 @@ export class ApiProxyService extends Service implements ApiProxy {
   readonly settings: ApiProxy['settings']
   readonly credentials: ApiProxy['credentials']
   readonly llm: ApiProxy['llm']
+  readonly harness: ApiProxy['harness']
   readonly monitor: ApiProxy['monitor']
   readonly router: ApiProxy['router']
   readonly events: ApiProxy['events']
@@ -119,6 +120,7 @@ export class ApiProxyService extends Service implements ApiProxy {
     this.settings = api.settings
     this.credentials = api.credentials
     this.llm = api.llm
+    this.harness = api.harness
     this.monitor = api.monitor
     this.router = api.router
     this.events = api.events

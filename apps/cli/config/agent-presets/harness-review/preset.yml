@@ -1,0 +1,3 @@
+name: Code Review Harness
+description: Finds real bugs in a codebase — change inventory, per-module review fanned out across subagents, cross-cutting correctness analysis, test-gap assessment, and adversarial verification that drops false positives.
+order: 11

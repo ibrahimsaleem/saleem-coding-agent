@@ -1,0 +1,224 @@
+# The `harness-bench` template: a benchmarking / evaluation-run harness.
+#
+# One of the four Harness Factory TEMPLATES. The factory copies this directory
+# through `agentPresets.copy()` and then rewrites only inert surfaces of the
+# copy — the persona text, the bundled skill markdown, `preset.yml`, and
+# `disabled:` on the rows the template's allowlist names. The ROW GRAPH below is
+# never generated: it is this file, verbatim, in every harness derived from it.
+# That is what makes a generated harness mount — its composition is one a human
+# already proved.
+#
+# This file is an AGENT-PLANE composition. The roster mounts it ONCE under a
+# standing scope; every session naming it joins by scope parentage, so the tools
+# and prompt sections registered here cover each joined agent while a session's
+# own state stays keyed per Session/Agent inside the plugins. The host
+# composition keeps everything a preset must not own: the registries themselves,
+# the sandbox and approval stack, persistence, and the model route.
+#
+# A service row here MUST sit inside a group carrying an `isolate` realm.
+# Without one it publishes into the root realm, where it is process-global —
+# another preset publishing the same name collides, and a host reader would
+# resolve one preset's instance for every session; `dsh-agent-presets` rejects
+# that at mount. `true` means an entry-local realm: this standing mount's own
+# private instance, apart from every other preset's.
+
+# ── identity ────────────────────────────────────────────────────────────────
+
+# REWRITTEN BY THE FACTORY (`persona.config.text`). The text below is the
+# template default and the fallback when generation is skipped. The measurement
+# rules are ALWAYS active — even before the methodology skill loads — because a
+# benchmark that quietly changes its own conditions produces a number that looks
+# authoritative and means nothing.
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: >-
+      You are a benchmarking and evaluation agent powered by the {{model}} model. Your working directory is {{cwd}}.
+      You design and execute reproducible benchmarks: task-suite definition, controlled parallel runs, rubric-based
+      scoring, statistical comparison across systems or configurations, and a written report whose every number
+      traces back to a stored run artifact.
+
+      Load the benchmarking-methodology skill before starting any benchmark and follow its phases exactly. Never
+      report a score you cannot reproduce from artifacts on disk.
+
+      Rules that always apply: fix the conditions before you measure — the same tasks, the same prompts, the same
+      limits for every system under test, and any difference recorded as a deliberate variable rather than an
+      accident; run enough samples that the number means something, and state the sample size beside every result;
+      never tune a system against the benchmark mid-run and then report the improved score as if conditions held;
+      report failures, timeouts, and errored runs as results rather than dropping them, because silently discarding
+      the runs that went badly is how a benchmark becomes a lie; state confidence honestly and do not present a
+      difference inside the noise as a ranking; and when the result contradicts what the user hoped for, say so
+      plainly.
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── shell ───────────────────────────────────────────────────────────────────
+
+# Both shell tools consume the host executor registry; their executors
+# (`bash-sandbox`/`pwsh-sandbox`) are host-plane too. Benchmarks need shell to
+# build the systems under test, launch them, and drive run scripts.
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── filesystem ──────────────────────────────────────────────────────────────
+
+# Both register into the host `tools` registry and provide nothing, so they need
+# no realm. Task suites, run artifacts, and score tables live on these tools.
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── background jobs ────────────────────────────────────────────────────────
+
+# Benchmark runs are long by nature: each system under test runs as a background
+# job so the suite keeps moving while batches execute.
+- id: tool-jobs
+  name: '@deepseek-ai/dsh-tool-jobs'
+
+# ── skills ──────────────────────────────────────────────────────────────────
+
+# `customSkillDirs` resolves against `baseUrl` — the preset's OWN directory — so
+# the bundled skill travels with the preset wherever it is copied, exported, or
+# unzipped. An absolute path here would break the moment the harness is
+# downloaded and run on another machine.
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+# ── goals ───────────────────────────────────────────────────────────────────
+
+# A benchmark is a long-running objective, so a run sits under a same-session
+# goal. Only the model-facing tool; the goal SERVICE stays on the host plane.
+- id: tool-goal
+  name: '@deepseek-ai/dsh-tool-goal'
+
+# ── plan mode ───────────────────────────────────────────────────────────────
+
+# Plan state is per-agent by nature, so an entry-local realm is not a workaround
+# here — it is the correct lifetime. A benchmark fixes its tasks, its metrics,
+# and its controlled conditions in a reviewed plan BEFORE any run executes.
+- id: planning
+  name: cordis:group
+  group: true
+  isolate:
+    planMode: true
+  config:
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        section: |
+              You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+              Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan.
+
+              Make the plan decision-complete: state the scope and success criteria, name the phases, identify which parts need runtime validation, and state explicit assumptions. Keep it concise enough to review but detailed enough to execute without further design decisions.
+
+              When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make exit_plan_mode the only and final tool call in that assistant response.
+
+# ── compaction ──────────────────────────────────────────────────────────────
+
+# `compaction-basic` reads `toolResultPrune` through `ctx.get`, so the pruner
+# must share this realm rather than sit outside it. `tokenMeter` stays HOST
+# plane; what a preset chooses is whether its agent compacts at all.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
+
+# ── delegation and workflows ────────────────────────────────────────────────
+
+# The `subagents` registry and its spawn/fork backends live in the HOST
+# composition; this preset contributes the delegation TOOLS. `workflows` is the
+# primary driver here — a benchmark matrix is naturally one deterministic script
+# fanning runs across systems and tasks; `subagent` carries an individual run,
+# `subagent_fork` carries a rubric-based scorer that needs the scoring context,
+# and `ralph` drives bounded repeat-until-stable sampling.
+- id: delegation
+  name: cordis:group
+  group: true
+  isolate:
+    workflowEngine: true
+  config:
+    - id: tool-subagent-control
+      name: '@deepseek-ai/dsh-tool-subagent-control'
+
+    - id: tool-subagent-list-agents
+      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+
+    - id: tool-subagent
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: subagent
+        backgroundMode: continuable
+
+    - id: tool-subagent-fork
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: fork
+        toolName: subagent_fork
+        backgroundMode: continuable
+
+    - id: workflow-worker-thread
+      name: '@deepseek-ai/dsh-workflow-worker-thread'
+      config:
+        provider: spawn
+
+    - id: tool-workflow
+      name: '@deepseek-ai/dsh-tool-workflow'
+
+    - id: tool-ralph
+      name: '@deepseek-ai/dsh-tool-ralph'
+      config:
+        subagentProvider: spawn
+        maxRounds: 64
+
+# ── remaining model-facing rows ─────────────────────────────────────────────
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
+
+# Search is used to look up published benchmark definitions and baseline numbers
+# to compare against; fetch stays off.
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000

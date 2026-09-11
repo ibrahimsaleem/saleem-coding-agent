@@ -63,6 +63,9 @@
       "path": "../harness-monitor"
     },
     {
+      "path": "../../preset/harness-factory"
+    },
+    {
       "path": "../../llm/free-model-router"
     },
     {

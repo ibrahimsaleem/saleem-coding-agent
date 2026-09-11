@@ -22,4 +22,16 @@ export interface DownloadsApi {
     request: { sessionId: SessionId; includeDescendants?: boolean },
     signal: AbortSignal,
   ): Promise<Response>
+
+  /**
+   * Stream one generated harness as a standalone-app ZIP: the preset
+   * directory, a settings file pointing at it, launchers, and a README. The
+   * carrier's GET route answers this directly; the browser reaches it with a
+   * plain link rather than an envelope call.
+   * @param request - the preset id to pack.
+   * @param signal - cancellation for the underlying reads.
+   * @returns the ZIP attachment response; a missing factory answers 500 and an
+   * unknown preset 404 before any byte is produced.
+   */
+  harnessPack(request: { agentPreset: string }, signal: AbortSignal): Promise<Response>
 }

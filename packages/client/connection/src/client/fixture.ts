@@ -32,7 +32,7 @@ import type { CommandId } from '@deepseek-ai/dsh-commands/brand'
 import type { CommandDescriptor, CommandExecution, CommandResult } from '@deepseek-ai/dsh-commands/types'
 import { deriveEventMessage, foldSurface } from '@deepseek-ai/dsh-session/surface'
 import type {
-  ApiProxy, ClientRequest, ClientResponse, HistoryEntry, HostFrame, MonitorSnapshot, MuxFrame, RpcReceipt,
+  ApiProxy, ClientRequest, ClientResponse, GeneratedHarnessEntry, HistoryEntry, HostFrame, MonitorSnapshot, MuxFrame, RpcReceipt,
   ModelProviderGroup, ModelSelection, RpcRequest, RpcResponse, RpcResult, ServerRequest, ServerResponse, SessionSummary,
   ToolCallView, ToolEventView, ToolResultView, WorkspaceId, WorkspaceView,
 } from './api.ts'
@@ -3143,6 +3143,17 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
       })
       return Promise.resolve({ accepted: true })
     },
+    // Harness Factory: fixture mode has no writable preset root and no model,
+    // so the catalog is advertised but generation is refused — the page then
+    // renders its real empty state rather than a fabricated success.
+    harness: {
+      templates: request => ok(request, { templates: [], available: false }),
+      generate: (request): Promise<RpcResponse<{ harness: GeneratedHarnessEntry }>> => err(request, {
+        code: 'harness-unavailable' as const,
+        message: 'the harness factory is not available in fixture mode',
+        details: {},
+      }),
+    },
     // Read-only observability surface: fixture mode has no `~/.dsh` to scan,
     // so every call answers with an empty-but-well-formed shape.
     monitor: {
@@ -3174,6 +3185,7 @@ function createFixtureWorld(options: FixtureOptions): FixtureWorld {
     // stub is never reached through the fixture's dispatch.
     downloads: {
       sessionLog: () => Promise.resolve(new Response('fixture mode does not serve session export', { status: 404 })),
+      harnessPack: () => Promise.resolve(new Response('fixture mode does not serve harness export', { status: 404 })),
     },
   }
 
@@ -3318,6 +3330,8 @@ export class FixtureApiClient extends AbstractApiClient {
       case 'llm.providers': return this.api.llm.providers(request)
       case 'llm.models': return this.api.llm.models(request)
       case 'llm.discoverModels': return this.api.llm.discoverModels(request, signal)
+      case 'harness.templates': return this.api.harness.templates(request)
+      case 'harness.generate': return this.api.harness.generate(request, signal)
       case 'monitor.snapshot': return this.api.monitor.snapshot(request)
       case 'monitor.sessionTimeline': return this.api.monitor.sessionTimeline(request)
       case 'monitor.setGuardArmed': return this.api.monitor.setGuardArmed(request)

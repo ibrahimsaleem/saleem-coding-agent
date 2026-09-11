@@ -69,6 +69,7 @@ import type { JobSnapshot } from '@deepseek-ai/dsh-jobs'
 import type {} from '@deepseek-ai/dsh-session-projection-cache'
 // Type-only: resolves `ctx.harnessMonitor` (the observability service the monitor domain forwards to).
 import type {} from '@deepseek-ai/dsh-host-harness-monitor'
+import type {} from '@ibrahimsaleem/dsh-harness-factory'
 // Type-only: resolves `ctx.modelRouter` (the free-model router the router domain forwards to).
 import type {} from '@ibrahimsaleem/dsh-llm-free-model-router'
 // GoalError narrows domain rejections to their stable codes at the wire boundary.
@@ -3192,6 +3193,61 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
       },
     },
 
+    harness: {
+      // Thin pass-through to ctx.harnessFactory. A deployment may mount no
+      // factory (headless, ACP, the SDK server), so `templates` answers
+      // `available: false` rather than failing — the page then explains itself
+      // instead of showing an error bar.
+      templates(request) {
+        const factory = ctx.get('harnessFactory')
+        if (factory === undefined) return Promise.resolve(ok(request, { templates: [], available: false }))
+        return Promise.resolve(ok(request, {
+          available: true,
+          templates: factory.templates().map(template => ({
+            id: template.id,
+            label: template.label,
+            blurb: template.blurb,
+            phases: [...template.phases],
+            toggles: template.toggles.map(toggle => ({
+              id: toggle.id,
+              label: toggle.label,
+              defaultOn: toggle.defaultOn,
+            })),
+          })),
+        }))
+      },
+      async generate(request, signal) {
+        const factory = ctx.get('harnessFactory')
+        if (factory === undefined) {
+          return err(request, {
+            code: 'harness-unavailable',
+            message: 'this deployment does not mount the harness factory',
+            details: {},
+          })
+        }
+        const { prompt, template } = request.payload
+        try {
+          const harness = await factory.generate({
+            prompt,
+            ...template === undefined ? {} : { template },
+            signal,
+          })
+          return ok(request, { harness })
+        } catch (error) {
+          signal.throwIfAborted()
+          // The factory's own failures are the actionable ones (a model that
+          // would not produce a usable spec, a composition that would not
+          // mount), so the message is carried through rather than flattened —
+          // it names what to change about the prompt.
+          return err(request, {
+            code: 'harness-generation-failed',
+            message: error instanceof Error ? error.message : String(error),
+            details: {},
+          })
+        }
+      },
+    },
+
     monitor: {
       // Thin pass-through to ctx.harnessMonitor — all aggregation, the poll
       // loop, and the guard state live in that service.
@@ -3880,6 +3936,34 @@ export function createApiProxy(ctx: Context, defaults: ApiProxyDefaults): ApiPro
     },
 
     downloads: {
+      async harnessPack(request, signal) {
+        const factory = ctx.get('harnessFactory')
+        if (factory === undefined) {
+          return new Response('harness export is unavailable: the harness factory is not mounted', { status: 500 })
+        }
+        let pack
+        try {
+          pack = await factory.pack(request.agentPreset)
+          signal.throwIfAborted()
+        } catch (error) {
+          signal.throwIfAborted()
+          // An unknown preset is the ordinary case and answers 404; anything
+          // else answers 500 without echoing the error, which may carry
+          // absolute host paths into the browser.
+          const message = error instanceof Error ? error.message : String(error)
+          if (/unknown|not found|no such/iu.test(message)) {
+            return new Response('harness not found', { status: 404 })
+          }
+          return new Response('harness export failed to build the archive', { status: 500 })
+        }
+        return new Response(pack.bytes as unknown as BodyInit, {
+          headers: {
+            'content-type': 'application/zip',
+            'content-disposition': `attachment; filename="${pack.filename}"`,
+          },
+        })
+      },
+
       async sessionLog(request, signal) {
         // Clean error path first: missing services answer 500 and a missing
         // root artifact 404 before any zip byte is produced. The root content

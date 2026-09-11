@@ -18,6 +18,7 @@ export type {
   CredentialsApi, CredentialView, ConfigurableProviderView, DiscoveredModelView, LlmApi,
   SubagentsApi, SubagentAddress, SubagentCatalog, SubagentListEntry, SubagentPromptReceipt,
   JobView,
+  HarnessApi, HarnessTemplateEntry, GeneratedHarnessEntry,
   MonitorApi, MonitorSnapshot, MonitorSession, MonitorSecurityFinding, MonitorPermissionEvent,
   MonitorProcess, MonitorModel, MonitorSummary, MonitorActivity, MonitorActivityBucket,
   MonitorGuardState, MonitorGuardEvent, MonitorKillResult, MonitorHistoryPoint, MonitorSessionCost,

@@ -1,0 +1,3 @@
+name: Benchmarking Harness
+description: Runs reproducible benchmarks — task-suite definition, controlled parallel runs orchestrated through workflows, rubric-based scoring, and a comparison report where every number traces to a stored artifact.
+order: 13

@@ -264,6 +264,12 @@
     - id: ui-harness-monitor
       name: '@deepseek-ai/dsh-client-ui-harness-monitor'
 
+    # The Harness Factory page: describe a harness, generate it from a shipped
+    # template, then run or download it. Pure surface — the building happens in
+    # the host `harness-factory` service behind the `harness.*` RPC domain.
+    - id: ui-harness-factory
+      name: '@ibrahimsaleem/dsh-client-ui-harness-factory'
+
     # Input triggers: the '/' | '@' pipeline (ui-input-trigger), the command surface over
     # it (ui-commands), and the reference sources (ui-skill / ui-reference).
     - id: ui-input-trigger
@@ -470,3 +476,14 @@
       name: '@deepseek-ai/dsh-agent-presets'
       config:
         default: standard
+
+    # The Harness Factory builds new presets from a description: it copies one
+    # of the shipped `harness-*` templates, rewrites the copy's persona, skill
+    # and capability toggles from a validated spec, and MOUNTS the result
+    # before reporting success. It sits beside the roster because it is a
+    # roster author — it holds no state of its own and reaches `agentPresets`
+    # through `ctx.get`, so a deployment without a roster loads it inert.
+    - id: harness-factory
+      name: '@ibrahimsaleem/dsh-harness-factory'
+      config:
+        order: 100

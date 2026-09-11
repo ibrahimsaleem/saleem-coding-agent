@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto'
 import type { z } from 'zod'
 import type { ApiProxy, MuxFrame, HostFrame } from '../api/index.ts'
 import { sessionLogQuerySchema } from '../api/downloads.schema.ts'
+import { harnessGenerateRequestSchema, harnessPackQuerySchema, harnessTemplatesRequestSchema } from '../api/harness.schema.ts'
 import type { RequestPayload, ResponseValue, RpcMethodMap } from '../api/rpc-map.ts'
 import type { ClientRequest, RpcError, RpcRequest, RpcResponse, ServerRequest, ServerResponse } from '../api/rpc.ts'
 import { RpcId } from '../api/rpc.ts'
@@ -160,6 +161,8 @@ const UNARY_ROUTES: UnaryRoutes = {
   'llm.providers': { schema: llmProvidersRequestSchema, invoke: (api, r) => api.llm.providers(r) },
   'llm.models': { schema: llmModelsRequestSchema, invoke: (api, r) => api.llm.models(r) },
   'llm.discoverModels': { schema: llmDiscoverModelsRequestSchema, invoke: (api, r, signal) => api.llm.discoverModels(r, signal) },
+  'harness.templates': { schema: harnessTemplatesRequestSchema, invoke: (api, r) => api.harness.templates(r) },
+  'harness.generate': { schema: harnessGenerateRequestSchema, invoke: (api, r, signal) => api.harness.generate(r, signal) },
   'monitor.snapshot': { schema: monitorSnapshotRequestSchema, invoke: (api, r) => api.monitor.snapshot(r) },
   'monitor.sessionTimeline': { schema: monitorSessionTimelineRequestSchema, invoke: (api, r) => api.monitor.sessionTimeline(r) },
   'monitor.setGuardArmed': { schema: monitorSetGuardArmedRequestSchema, invoke: (api, r) => api.monitor.setGuardArmed(r) },
@@ -286,6 +289,16 @@ export function toFetchHandler(api: ApiProxy): { fetch: typeof fetch } {
       }
       if (path === '/api/events.host' && req.method === 'GET') {
         return sseResponse(api.events.host({ rpcId: RpcId(randomUUID()), payload: {} }, req.signal))
+      }
+      if (path === '/api/harness.export' && (req.method === 'GET' || req.method === 'HEAD')) {
+        const parsed = harnessPackQuerySchema.safeParse(Object.fromEntries(url.searchParams))
+        if (!parsed.success) {
+          return new Response('missing or invalid agentPreset query parameter', { status: 400 })
+        }
+        const response = await api.downloads.harnessPack(parsed.data, req.signal)
+        if (req.method === 'GET') return response
+        await response.body?.cancel()
+        return new Response(null, { status: response.status, headers: response.headers })
       }
       if (path === '/api/session.export' && (req.method === 'GET' || req.method === 'HEAD')) {
         // Query params are a different boundary from the POST envelope, but

@@ -1,0 +1,222 @@
+# The `harness-review` template: a bug-finding and code-review harness.
+#
+# One of the four Harness Factory TEMPLATES. The factory copies this directory
+# through `agentPresets.copy()` and then rewrites only inert surfaces of the
+# copy — the persona text, the bundled skill markdown, `preset.yml`, and
+# `disabled:` on the rows the template's allowlist names. The ROW GRAPH below is
+# never generated: it is this file, verbatim, in every harness derived from it.
+# That is what makes a generated harness mount — its composition is one a human
+# already proved.
+#
+# This file is an AGENT-PLANE composition. The roster mounts it ONCE under a
+# standing scope; every session naming it joins by scope parentage, so the tools
+# and prompt sections registered here cover each joined agent while a session's
+# own state stays keyed per Session/Agent inside the plugins. The host
+# composition keeps everything a preset must not own: the registries themselves,
+# the sandbox and approval stack, persistence, and the model route.
+#
+# A service row here MUST sit inside a group carrying an `isolate` realm.
+# Without one it publishes into the root realm, where it is process-global —
+# another preset publishing the same name collides, and a host reader would
+# resolve one preset's instance for every session; `dsh-agent-presets` rejects
+# that at mount. `true` means an entry-local realm: this standing mount's own
+# private instance, apart from every other preset's.
+
+# ── identity ────────────────────────────────────────────────────────────────
+
+# REWRITTEN BY THE FACTORY (`persona.config.text`). The text below is the
+# template default and the fallback when generation is skipped. The evidence
+# rules are ALWAYS active — even before the methodology skill loads — because an
+# unverified finding costs a reviewer more time than it saves.
+- id: persona
+  name: '@deepseek-ai/dsh-persona'
+  config:
+    text: >-
+      You are a code-review and bug-finding agent powered by the {{model}} model. Your working directory is {{cwd}}.
+      You review code for correctness: change inventory, per-module review fanned out across subagents, cross-cutting
+      correctness analysis, test-gap assessment, adversarial verification that removes false positives, and a written
+      review with concrete, actionable findings.
+
+      Load the code-review-methodology skill before starting any review and follow its phases exactly. Never skip the
+      verification phase; never report a bug you have not traced to a concrete failure — inputs, state, and the wrong
+      output or crash that results.
+
+      Rules that always apply: report defects, not preferences — a style opinion is not a finding unless the project's
+      own conventions make it one; every finding names a file and line and shows the actual code; rank by real impact,
+      not by how easy the issue was to spot; when you cannot prove a suspected bug, say so and mark it unverified
+      rather than inflating confidence; prefer reading the surrounding code over assuming an API behaves as its name
+      suggests; and when you run tests or builds to confirm a finding, report what actually happened, including
+      failures that contradict your hypothesis.
+
+- id: agent-instructions
+  name: '@deepseek-ai/dsh-agent-instructions'
+  config:
+    maxBytes: 65536
+
+# ── shell ───────────────────────────────────────────────────────────────────
+
+# Both shell tools consume the host executor registry; their executors
+# (`bash-sandbox`/`pwsh-sandbox`) are host-plane too. Reviews need shell for
+# builds, test runs, and git/gh.
+- id: tool-bash
+  name: '@deepseek-ai/dsh-tool-bash'
+  disabled: !!js process.platform === 'win32'
+
+- id: tool-pwsh
+  name: '@deepseek-ai/dsh-tool-pwsh'
+  disabled: !!js process.platform !== 'win32'
+
+# ── filesystem ──────────────────────────────────────────────────────────────
+
+# Both register into the host `tools` registry and provide nothing, so they need
+# no realm. Per-module reading and change inventory live on these tools.
+- id: tool-fs
+  name: '@deepseek-ai/dsh-tool-fs'
+
+- id: tool-fs-search
+  name: '@deepseek-ai/dsh-tool-fs-search'
+  config:
+    sampleOverCapGlobResults: false
+
+# ── background jobs ────────────────────────────────────────────────────────
+
+# Long builds and full test suites go through jobs so the review keeps moving
+# while they settle.
+- id: tool-jobs
+  name: '@deepseek-ai/dsh-tool-jobs'
+
+# ── skills ──────────────────────────────────────────────────────────────────
+
+# `customSkillDirs` resolves against `baseUrl` — the preset's OWN directory — so
+# the bundled skill travels with the preset wherever it is copied, exported, or
+# unzipped. An absolute path here would break the moment the harness is
+# downloaded and run on another machine.
+- id: skill-filesystem
+  name: '@deepseek-ai/dsh-skill-filesystem'
+  config:
+    customSkillDirs:
+      - !!js "process.getBuiltinModule('node:url').fileURLToPath(new URL('skills/', baseUrl))"
+
+- id: tool-skill
+  name: '@deepseek-ai/dsh-tool-skill'
+
+# ── goals ───────────────────────────────────────────────────────────────────
+
+# A full review is a long-running objective, so reviews run under a same-session
+# goal. Only the model-facing tool; the goal SERVICE stays on the host plane.
+- id: tool-goal
+  name: '@deepseek-ai/dsh-tool-goal'
+
+# ── plan mode ───────────────────────────────────────────────────────────────
+
+# Plan state is per-agent by nature, so an entry-local realm is not a workaround
+# here — it is the correct lifetime. Large reviews start with a reviewed plan
+# (scope, phases, which modules get their own reviewer) before execution.
+- id: planning
+  name: cordis:group
+  group: true
+  isolate:
+    planMode: true
+  config:
+    - id: plan-mode
+      name: '@deepseek-ai/dsh-plan-mode'
+      config:
+        section: |
+              You are in plan mode. Stay in plan mode until exit_plan_mode succeeds or the user switches the session mode. Imperative language to implement changes means plan the implementation, not execute it. A user's conversational agreement — including an answer confirming something you asked — approves nothing and does not end plan mode; fold the confirmed decision into the plan and submit it through exit_plan_mode.
+
+              Explore first. Use non-mutating reads, searches, static analysis, and checks to ground the plan in the actual repository. Do not edit or write files, change configuration, run formatters or code generation that rewrites tracked files, commit, or otherwise carry out the plan.
+
+              Make the plan decision-complete: state the scope and success criteria, name the phases, identify which parts need runtime validation, and state explicit assumptions. Keep it concise enough to review but detailed enough to execute without further design decisions.
+
+              When ready, call exit_plan_mode with the complete plan markdown, starting with a # title. Make exit_plan_mode the only and final tool call in that assistant response.
+
+# ── compaction ──────────────────────────────────────────────────────────────
+
+# `compaction-basic` reads `toolResultPrune` through `ctx.get`, so the pruner
+# must share this realm rather than sit outside it. `tokenMeter` stays HOST
+# plane; what a preset chooses is whether its agent compacts at all.
+- id: compaction
+  name: cordis:group
+  group: true
+  isolate:
+    compaction: true
+    toolResultPruner: true
+  config:
+    - id: compaction-basic
+      name: '@deepseek-ai/dsh-compaction-basic'
+
+    - id: command-compact
+      name: '@deepseek-ai/dsh-command-compact'
+
+    - id: tool-result-pruner
+      name: '@deepseek-ai/dsh-compaction-tool-result-pruner'
+      config:
+        thresholdChars: 8192
+        headChars: 4096
+        tailChars: 1024
+
+# ── delegation and workflows ────────────────────────────────────────────────
+
+# The `subagents` registry and its spawn/fork backends live in the HOST
+# composition; this preset contributes the delegation TOOLS. Review fans out
+# per-module reviewer subagents (`subagent`) and runs one adversarial verifier
+# per candidate finding (`subagent_fork`, which inherits the review context);
+# `workflows` orchestrates whole-repo sweeps through one script, and `ralph`
+# drives bounded iterate-until-clean loops.
+- id: delegation
+  name: cordis:group
+  group: true
+  isolate:
+    workflowEngine: true
+  config:
+    - id: tool-subagent-control
+      name: '@deepseek-ai/dsh-tool-subagent-control'
+
+    - id: tool-subagent-list-agents
+      name: '@deepseek-ai/dsh-tool-subagent-control/list-agents'
+
+    - id: tool-subagent
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: spawn
+        toolName: subagent
+        backgroundMode: continuable
+
+    - id: tool-subagent-fork
+      name: '@deepseek-ai/dsh-tool-subagent'
+      config:
+        provider: fork
+        toolName: subagent_fork
+        backgroundMode: continuable
+
+    - id: workflow-worker-thread
+      name: '@deepseek-ai/dsh-workflow-worker-thread'
+      config:
+        provider: spawn
+
+    - id: tool-workflow
+      name: '@deepseek-ai/dsh-tool-workflow'
+
+    - id: tool-ralph
+      name: '@deepseek-ai/dsh-tool-ralph'
+      config:
+        subagentProvider: spawn
+        maxRounds: 64
+
+# ── remaining model-facing rows ─────────────────────────────────────────────
+
+- id: tool-ask-user
+  name: '@deepseek-ai/dsh-tool-ask-user'
+
+- id: tool-todo
+  name: '@deepseek-ai/dsh-tool-todo'
+  config:
+    allowParallelInProgress: true
+
+# Search is used for library-behaviour and API-contract lookups when the code's
+# intent depends on a third-party guarantee; fetch stays off.
+- id: tool-web
+  name: '@deepseek-ai/dsh-tool-web'
+  config:
+    fetch: false
+    searchTimeoutMs: 60000
