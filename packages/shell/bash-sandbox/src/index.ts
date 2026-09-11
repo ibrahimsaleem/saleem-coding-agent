@@ -69,6 +69,14 @@ export class SandboxBashExecutor extends LocalBashExecutor {
     // The default mode is the capability fact used for schema advertisement;
     // actual tool executions carry their resolved per-call policy.
     this.mode = ctx.sandboxPolicy.defaultMode
+    // Best-effort early nudge (see SandboxProvider.warmWorkspace): on
+    // windows-acl this kicks the workspace's first, potentially expensive
+    // write grant off in the background now, well before the model's first
+    // actual tool call, instead of paying it inline on that first confine().
+    // Uses the deployment default root, same non-session-aware fact `mode`
+    // above already uses; a session with a different resolved cwd just gets
+    // no benefit from this warm, never a wrong result.
+    ctx.sandbox.warmWorkspace(ctx.sandboxPolicy.workspaceRoot)
   }
 
   /** The configured default mode — the capability fact the tool layer reads. */

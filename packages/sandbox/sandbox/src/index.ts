@@ -173,6 +173,25 @@ export abstract class SandboxProvider extends Service {
    *   the selected backend achieves for it.
    */
   abstract confine(argv: readonly string[], policy: SandboxPolicy): ConfinedArgv
+
+  /**
+   * Best-effort early nudge: a workspace-write-capable consumer calls this as
+   * soon as it knows a workspace root, well before it has an actual command
+   * to confine, so a backend whose FIRST grant for that root is expensive
+   * (the windows-acl rung's one-time full-tree ACE propagation — see
+   * `sandbox-local`'s `materializeAclGrant`) can do that work in the
+   * background instead of blocking the first real {@link confine} call. Never
+   * throws and never blocks the caller; a backend with no such cost (every
+   * non-Windows rung) leaves this a no-op. A failed or still-running warm
+   * changes nothing observable — {@link confine} still performs the same
+   * materialization inline and is the only call site that can report a
+   * genuine failure.
+   * @param workspaceRoot - the resolved policy root a future `workspace-write` confine() call would carry.
+   */
+  warmWorkspace(workspaceRoot: string): void {
+    // Default no-op; overridden only where a first grant is costly.
+    void workspaceRoot
+  }
 }
 
 export default SandboxProvider

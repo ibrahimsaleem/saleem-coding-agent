@@ -20,7 +20,7 @@
  * @module @deepseek-ai/dsh-sandbox-local
  */
 
-import { spawnSync } from 'node:child_process'
+import { spawn, spawnSync } from 'node:child_process'
 import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -131,6 +131,10 @@ export interface SandboxInternals {
   windowsAclRunnerArgs?: string[]
   /** Replaces the resolved windows-acl runner built entry path (a fake lib/runner.js location). */
   windowsAclRunnerEntry?: string
+  /** Replaces the resolved windows-acl grant-cli argv prefix (a fake runner, for `warmWorkspace` tests). */
+  windowsAclGrantCliArgs?: string[]
+  /** Replaces the resolved windows-acl grant-cli built entry path (a fake lib/grant-cli.js location). */
+  windowsAclGrantCliEntry?: string
   /** Replaces the functional windows-acl probe (the win32 chain's sole rung — only consulted if that chain ever grows). */
   probeWindowsAcl?: () => boolean
   /** Replaces the private-temp-directory removal at provider dispose (a throwing fake exercises the cleanup-failure path). */
@@ -272,6 +276,8 @@ export class LocalSandboxProvider extends SandboxProvider {
    */
   private readonly workspaceGrants = new Map<string, AclWriteGrant>()
   private readonly tempCapabilities = new Map<string, AclTempCapability>()
+  /** Workspace roots with a background {@link warmWorkspace} grant-cli currently in flight. */
+  private readonly warmingWorkspaces = new Set<string>()
 
   constructor(ctx: Context, config: Config) {
     super(ctx)
@@ -329,6 +335,32 @@ export class LocalSandboxProvider extends SandboxProvider {
       enforcement: selected.enforcement,
       denialSignatures: DENIAL_SIGNATURES[selected.runner],
       runnerFailureRules: RUNNER_FAILURE_RULES[selected.runner],
+    }
+  }
+
+  /**
+   * Best-effort early trigger for the windows-acl workspace-root grant (see
+   * the base class doc). Runs the SAME grant a first `workspace-write`
+   * `confine()` call would perform, but in a separate, short-lived OS
+   * process (`@deepseek-ai/dsh-sandbox-windows-acl/grant-cli`) so its
+   * one-time full-tree ACE propagation never blocks this host's event loop.
+   * A no-op off Windows, once already granted, or while already warming; any
+   * spawn or derivation failure is swallowed — `materializeAclGrant` is the
+   * only call site that reports a genuine grant failure.
+   */
+  override warmWorkspace(workspaceRoot: string): void {
+    if ((this.internals.platform ?? process.platform) !== 'win32') return
+    if (this.workspaceGrants.has(workspaceRoot) || this.warmingWorkspaces.has(workspaceRoot)) return
+    this.warmingWorkspaces.add(workspaceRoot)
+    const done = (): void => { this.warmingWorkspaces.delete(workspaceRoot) }
+    try {
+      const [program, ...args] = this.windowsAclGrantCliInvocation()
+      if (program === undefined) { done(); return }
+      const child = spawn(program, [...args, '--sid', workspaceWriteSid(workspaceRoot), '--path', workspaceRoot], { stdio: 'ignore' })
+      child.on('exit', done)
+      child.on('error', done)
+    } catch {
+      done()
     }
   }
 
@@ -560,6 +592,21 @@ export class LocalSandboxProvider extends SandboxProvider {
     const builtEntry = this.internals.windowsAclRunnerEntry ?? fileURLToPath(import.meta.resolve('@deepseek-ai/dsh-sandbox-windows-acl/runner'))
     if (existsSync(builtEntry)) return [process.execPath, builtEntry]
     const sourceEntry = fileURLToPath(import.meta.resolve('@deepseek-ai/dsh-sandbox-windows-acl/src/runner.ts'))
+    return [process.execPath, '--import', 'tsx/esm', sourceEntry]
+  }
+
+  /**
+   * The windows-acl grant-cli argv prefix ({@link warmWorkspace}'s
+   * background process): the built lib/grant-cli.js entry when present
+   * (production), else the package source through tsx (development). Mirrors
+   * {@link windowsAclRunnerInvocation} exactly.
+   */
+  private windowsAclGrantCliInvocation(): string[] {
+    const override = this.internals.windowsAclGrantCliArgs
+    if (override !== undefined) return override
+    const builtEntry = this.internals.windowsAclGrantCliEntry ?? fileURLToPath(import.meta.resolve('@deepseek-ai/dsh-sandbox-windows-acl/grant-cli'))
+    if (existsSync(builtEntry)) return [process.execPath, builtEntry]
+    const sourceEntry = fileURLToPath(import.meta.resolve('@deepseek-ai/dsh-sandbox-windows-acl/src/grant-cli.ts'))
     return [process.execPath, '--import', 'tsx/esm', sourceEntry]
   }
 }
