@@ -88,12 +88,20 @@ function mount(
 describe('WelcomeNotice', () => {
   it('uses the exact owner copy in both GUI locales', () => {
     expect(WELCOME_NOTICE_COPY.en).toEqual({
-      title: 'Internal Testing Notice',
-      body: "DeepSeek Harness 0.1 remains in testing for Harness developers. Many areas need further improvement, and we welcome feedback from the developer community. DeepSeek Harness's core plugins and foundational APIs will continue to evolve rapidly over the coming months.\n\nWe look forward to exploring the limits of intelligence with developers around the world, building on open-source, open, reusable, and composable infrastructure. We welcome Harness developers everywhere to join the DSH plugin ecosystem.",
+      title: 'Welcome',
+      body: 'Saleem Meta Harness is under active development; core plugins and foundational APIs may evolve quickly.',
       continueLabel: 'Continue',
     })
     expect(en.welcomeBody).toBe(WELCOME_NOTICE_COPY.en.body)
     expect(zh.welcomeBody).toBe(WELCOME_NOTICE_COPY.zh.body)
+  })
+
+  it('carries the product name, so a rebrand cannot leave this notice behind', () => {
+    // This copy went stale twice across two rebrands before anything caught it,
+    // because the assertion above pins the text and nothing pinned the name.
+    for (const locale of ['en', 'zh'] as const) {
+      expect(WELCOME_NOTICE_COPY[locale].body, locale).toContain('Saleem Meta Harness')
+    }
   })
 
   it('renders one blocking modal action and focuses the title', async () => {
@@ -102,7 +110,9 @@ describe('WelcomeNotice', () => {
     for (const paragraph of WELCOME_NOTICE_COPY.zh.body.split('\n\n')) {
       expect(screen.getByText(paragraph, { exact: true })).toBeTruthy()
     }
-    expect(dialog.querySelectorAll('p')).toHaveLength(2)
+    // Derived, not hardcoded: the notice renders one <p> per paragraph, so
+    // pinning a literal count re-breaks this test every time the copy is edited.
+    expect(dialog.querySelectorAll('p')).toHaveLength(WELCOME_NOTICE_COPY.zh.body.split('\n\n').length)
     expect(dialog.querySelectorAll('button')).toHaveLength(1)
     expect(screen.getByRole('button', { name: WELCOME_NOTICE_COPY.zh.continueLabel })).toBeTruthy()
     expect(document.activeElement).toBe(screen.getByRole('heading', { name: WELCOME_NOTICE_COPY.zh.title }))

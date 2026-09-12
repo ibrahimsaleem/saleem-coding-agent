@@ -27,11 +27,21 @@ Monitor**.
 
 ## Build a harness
 
-Open the web UI, click **✦ Create Harness**, pick a starting point (or let the model
-choose), and describe what you want. You get back:
+Open the web UI and click **✦ Create Harness**. Pick a starting point — or let the model
+choose — and describe what you want.
+
+![Create Harness — pick a starting point](docs/images/factory-templates.jpg)
+
+The model writes the persona and the methodology playbook, the chosen template is copied,
+and the result is **mounted** to prove it runs before you are shown it. A harness that
+cannot load is rolled back rather than left on the roster.
+
+![Create Harness — the generated harness](docs/images/factory-result.jpg)
+
+From there:
 
 - **Run it** — opens a session on the new harness immediately.
-- **Download** — a small archive that builds its runtime on first run.
+- **Download** — a small archive that builds its runtime on first run (needs node, git, pnpm).
 - **Download standalone** — the runtime included; unzip and run with only Node installed.
 
 How it works, and why a generated harness always mounts, is documented in
